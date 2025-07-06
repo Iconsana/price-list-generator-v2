@@ -5,8 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Price List Generator - Shopify App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
+    <!-- Use simple Unicode icons instead of Lucide to avoid dependencies -->
+    <style>
+        .icon {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            text-align: center;
+            line-height: 1.5rem;
+        }
+        .icon-lg {
+            width: 2rem;
+            height: 2rem;
+            line-height: 2rem;
+            font-size: 1.2rem;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <!-- Header -->
@@ -14,13 +28,13 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center">
-                    <i data-lucide="file-text" class="h-8 w-8 text-blue-600 mr-3"></i>
+                    <span class="icon icon-lg text-blue-600 mr-3">📄</span>
                     <h1 class="text-xl font-semibold text-gray-900">Price List Generator</h1>
                 </div>
                 <div class="flex items-center space-x-4">
                     <span id="storeInfo" class="text-sm text-gray-600"></span>
                     <button id="refreshBtn" class="p-2 text-gray-400 hover:text-gray-600">
-                        <i data-lucide="refresh-cw" class="h-5 w-5"></i>
+                        <span class="icon">🔄</span>
                     </button>
                 </div>
             </div>
@@ -34,7 +48,7 @@
             <div class="px-4 py-5 sm:p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <i data-lucide="zap" class="h-10 w-10 text-blue-500"></i>
+                        <span class="icon icon-lg text-blue-500">⚡</span>
                     </div>
                     <div class="ml-5 w-0 flex-1">
                         <dl>
@@ -57,7 +71,7 @@
                 <div class="p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i data-lucide="plus-circle" class="h-8 w-8 text-green-500"></i>
+                            <span class="icon icon-lg text-green-500">➕</span>
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
@@ -83,7 +97,7 @@
                 <div class="p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i data-lucide="folder" class="h-8 w-8 text-blue-500"></i>
+                            <span class="icon icon-lg text-blue-500">📁</span>
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
@@ -109,7 +123,7 @@
                 <div class="p-6">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i data-lucide="layout-template" class="h-8 w-8 text-purple-500"></i>
+                            <span class="icon icon-lg text-purple-500">🎨</span>
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
@@ -140,7 +154,7 @@
                 <div id="recentActivity" class="space-y-3">
                     <!-- Will be populated by JavaScript -->
                     <div class="text-center py-8 text-gray-500">
-                        <i data-lucide="file-text" class="h-12 w-12 mx-auto mb-3 text-gray-300"></i>
+                        <span class="icon" style="font-size: 3rem; display: block; margin: 0 auto 1rem;">📄</span>
                         <p>No price lists created yet</p>
                         <p class="text-sm">Click "Create New Price List" to get started</p>
                     </div>
@@ -154,7 +168,7 @@
                 <div class="p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i data-lucide="package" class="h-6 w-6 text-gray-400"></i>
+                            <span class="icon text-gray-400">📦</span>
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
@@ -174,7 +188,7 @@
                 <div class="p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i data-lucide="download" class="h-6 w-6 text-gray-400"></i>
+                            <span class="icon text-gray-400">⬇️</span>
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
@@ -194,7 +208,7 @@
                 <div class="p-5">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i data-lucide="clock" class="h-6 w-6 text-gray-400"></i>
+                            <span class="icon text-gray-400">🕐</span>
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
@@ -223,9 +237,6 @@
     </div>
 
     <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
-
         // State management
         const state = {
             products: [],
@@ -287,7 +298,7 @@
             if (priceLists.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-8 text-gray-500">
-                        <i data-lucide="file-text" class="h-12 w-12 mx-auto mb-3 text-gray-300"></i>
+                        <span class="icon" style="font-size: 3rem; display: block; margin: 0 auto 1rem;">📄</span>
                         <p>No price lists created yet</p>
                         <p class="text-sm">Click "Create New Price List" to get started</p>
                     </div>
@@ -298,7 +309,7 @@
                 container.innerHTML = recentLists.map(list => `
                     <div class="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
                         <div class="flex items-center">
-                            <i data-lucide="file-text" class="h-5 w-5 text-gray-400 mr-3"></i>
+                            <span class="icon text-gray-400 mr-3">📄</span>
                             <div>
                                 <p class="text-sm font-medium text-gray-900">${list.name}</p>
                                 <p class="text-sm text-gray-500">${list.productCount} products</p>
@@ -307,15 +318,12 @@
                         <div class="flex items-center space-x-2">
                             <span class="text-xs text-gray-500">${formatDate(list.updatedAt)}</span>
                             <button onclick="editPriceList('${list.id}')" class="text-blue-600 hover:text-blue-800">
-                                <i data-lucide="edit-2" class="h-4 w-4"></i>
+                                <span class="icon">✏️</span>
                             </button>
                         </div>
                     </div>
                 `).join('');
             }
-            
-            // Reinitialize icons
-            lucide.createIcons();
         }
 
         function editPriceList(id) {
