@@ -3,173 +3,355 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Supplier Management</title>
+    <title>Price List Generator - Shopify App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .tab-content {
-            padding: 20px 0;
-        }
-        .tab-pane {
-            animation: fadeIn 0.5s;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .card-title {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <div class="flex items-center justify-between mb-8">
-            <h1 class="text-3xl font-bold">Multi-Supplier Management</h1>
-            <div class="bg-green-100 text-green-800 px-4 py-2 rounded">
-                APP STATUS: ONLINE
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i data-lucide="file-text" class="h-8 w-8 text-blue-600 mr-3"></i>
+                    <h1 class="text-xl font-semibold text-gray-900">Price List Generator</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="storeInfo" class="text-sm text-gray-600"></span>
+                    <button id="refreshBtn" class="p-2 text-gray-400 hover:text-gray-600">
+                        <i data-lucide="refresh-cw" class="h-5 w-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <!-- Welcome Section -->
+        <div class="bg-white overflow-hidden shadow rounded-lg mb-6">
+            <div class="px-4 py-5 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="zap" class="h-10 w-10 text-blue-500"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">
+                                Welcome to Price List Generator
+                            </dt>
+                            <dd class="text-lg font-medium text-gray-900">
+                                Create professional price lists from your Shopify products
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
             </div>
         </div>
 
-<!-- Add this somewhere near the top of your page, perhaps next to the "Multi-Supplier Management" title -->
-<div class="flex justify-between items-center mb-4">
-  <!-- <h1 class="text-3xl font-bold">Multi-Supplier Management</h1> -->
-  <a href="/auth/logout" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-    Logout
-  </a>
-</div>
-        
-        <!-- Main Navigation Tabs -->
-        <div class="border-b border-gray-200 mb-8">
-            <ul class="flex flex-wrap -mb-px" id="mainTabs" role="tablist">
-                <li class="mr-2" role="presentation">
-                    <button class="inline-block py-4 px-4 text-gray-500 hover:text-gray-700 font-medium border-b-2 border-transparent hover:border-gray-300" id="home-tab" data-tab="home" type="button" role="tab" aria-controls="home" aria-selected="true">Home</button>
-                </li>
-                <li class="mr-2" role="presentation">
-                    <button class="inline-block py-4 px-4 text-gray-500 hover:text-gray-700 font-medium border-b-2 border-transparent hover:border-gray-300" id="suppliers-tab" data-tab="suppliers" type="button" role="tab" aria-controls="suppliers" aria-selected="false">Suppliers</button>
-                </li>
-                <li class="mr-2" role="presentation">
-                    <button class="inline-block py-4 px-4 text-gray-500 hover:text-gray-700 font-medium border-b-2 border-transparent hover:border-gray-300" id="product-suppliers-tab" data-tab="product-suppliers" type="button" role="tab" aria-controls="product-suppliers" aria-selected="false">Product Suppliers</button>
-                </li>
-                <li class="mr-2" role="presentation">
-                    <button class="inline-block py-4 px-4 text-gray-500 hover:text-gray-700 font-medium border-b-2 border-transparent hover:border-gray-300" id="products-tab" data-tab="products" type="button" role="tab" aria-controls="products" aria-selected="false">Products</button>
-                </li>
-                <li class="mr-2" role="presentation">
-                    <button class="inline-block py-4 px-4 text-gray-500 hover:text-gray-700 font-medium border-b-2 border-transparent hover:border-gray-300" id="orders-tab" data-tab="orders" type="button" role="tab" aria-controls="orders" aria-selected="false">Purchase Orders</button>
-                </li>
-                <li class="mr-2" role="presentation">
-    <button class="inline-block py-4 px-4 text-gray-500 hover:text-gray-700 font-medium border-b-2 border-transparent hover:border-gray-300" id="quotes-tab" data-tab="quotes" type="button" role="tab" aria-controls="quotes" aria-selected="false">Quotes</button>
- </li>
-            </ul>
-        </div>
-
-        <!-- Tab Content -->
-        <div class="tab-content">
-            <!-- Home Tab (Default) -->
-            <div class="tab-pane active" id="home">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-lg shadow-md">
-                        <h2 class="text-xl font-semibold mb-4">Quick Access</h2>
-                        <div class="space-y-4">
-                            <a href="/test" class="block w-full bg-blue-500 text-white text-center py-3 rounded-lg hover:bg-blue-600 transition">
-                                Testing Interface
-                            </a>
-                            <a href="/suppliers" class="block w-full bg-purple-500 text-white text-center py-3 rounded-lg hover:bg-purple-600 transition">
-                                Supplier Management
-                            </a>
-                            <a href="/quotes" class="block w-full bg-green-500 text-white text-center py-3 rounded-lg hover:bg-green-600 transition">
-    Quote Processing
-</a>
+        <!-- Quick Actions Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Create New Price List -->
+            <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow cursor-pointer" onclick="createNewPriceList()">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="plus-circle" class="h-8 w-8 text-green-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    Create New
+                                </dt>
+                                <dd class="text-lg font-medium text-gray-900">
+                                    Price List
+                                </dd>
+                            </dl>
                         </div>
                     </div>
-                    
-                    <div class="bg-white p-6 rounded-lg shadow-md">
-                        <h2 class="text-xl font-semibold mb-4">API Connection</h2>
-                        <p class="text-gray-600 mb-4">Check if the API is working correctly.</p>
-                        <button id="testConnection" class="w-full bg-gray-800 text-white text-center py-3 rounded-lg hover:bg-gray-900 transition">
-                            Test API Connection
-                        </button>
-                        <div id="connectionResult" class="mt-4 p-4 bg-gray-100 rounded hidden"></div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-xl font-semibold mb-4">About This App</h2>
-                    <p class="text-gray-600 mb-4">
-                        This multi-supplier management app helps Shopify merchants manage multiple suppliers for each product,
-                        set priorities, track stock levels, and automate purchase order generation.
-                    </p>
-                    <div class="border-t pt-4 mt-4">
-                        <h3 class="font-medium mb-2">Key Features:</h3>
-                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
-                            <li>Assign multiple suppliers to each product</li>
-                            <li>Set supplier priorities for automatic fallback</li>
-                            <li>Track stock levels per supplier</li>
-                            <li>Generate purchase orders automatically</li>
-                            <li>Customize email templates for supplier communication</li>
-                        </ul>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-600">
+                            Select products and generate a professional price list
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <!-- Suppliers Tab -->
-            <div class="tab-pane hidden" id="suppliers">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-xl font-semibold mb-4">Supplier Management</h2>
-                    <div class="text-center py-10">
-                        <p class="text-gray-600 mb-4">Loading supplier management...</p>
-                        <a href="/suppliers" class="inline-block bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
-                            Go to Supplier Management
-                        </a>
+            <!-- My Price Lists -->
+            <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow cursor-pointer" onclick="viewMyPriceLists()">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="folder" class="h-8 w-8 text-blue-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    My Price Lists
+                                </dt>
+                                <dd class="text-lg font-medium text-gray-900">
+                                    <span id="priceListCount">0</span> Saved
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-600">
+                            View and manage your saved price lists
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <!-- Product Suppliers Tab -->
-            <div class="tab-pane hidden" id="product-suppliers">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-xl font-semibold mb-4">Product-Supplier Relationships</h2>
-                    <div class="text-center py-10">
-                        <p class="text-gray-600 mb-4">Loading product-supplier management...</p>
-                        <a href="/suppliers" class="inline-block bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
-                            Go to Product Suppliers
-                        </a>
+            <!-- Templates -->
+            <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow cursor-pointer" onclick="manageTemplates()">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="layout-template" class="h-8 w-8 text-purple-500"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    Templates
+                                </dt>
+                                <dd class="text-lg font-medium text-gray-900">
+                                    Customize Look
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-600">
+                            Manage branding and template settings
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    Recent Activity
+                </h3>
+                <div id="recentActivity" class="space-y-3">
+                    <!-- Will be populated by JavaScript -->
+                    <div class="text-center py-8 text-gray-500">
+                        <i data-lucide="file-text" class="h-12 w-12 mx-auto mb-3 text-gray-300"></i>
+                        <p>No price lists created yet</p>
+                        <p class="text-sm">Click "Create New Price List" to get started</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="package" class="h-6 w-6 text-gray-400"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    Total Products
+                                </dt>
+                                <dd class="text-lg font-medium text-gray-900" id="totalProducts">
+                                    Loading...
+                                </dd>
+                            </dl>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Products Tab -->
-            <div class="tab-pane hidden" id="products">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold">Your Shopify Products</h2>
-                        <button id="syncProductsBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                            Sync Products
-                        </button>
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="download" class="h-6 w-6 text-gray-400"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    Exports This Month
+                                </dt>
+                                <dd class="text-lg font-medium text-gray-900" id="monthlyExports">
+                                    0
+                                </dd>
+                            </dl>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="clock" class="h-6 w-6 text-gray-400"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    Last Updated
+                                </dt>
+                                <dd class="text-lg font-medium text-gray-900" id="lastUpdated">
+                                    Never
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Modal -->
+    <div id="loadingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-sm mx-4">
+            <div class="flex items-center">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span class="ml-3 text-gray-900">Loading products...</span>
             </div>
         </div>
     </div>
-    <!-- Authentication check -->
-<script>
-  async function checkAuth() {
-    try {
-      const response = await fetch('/auth/status');
-      const data = await response.json();
-      
-      if (!data.authenticated) {
-        window.location.href = '/login.html';
-      }
-    } catch (error) {
-      console.error('Error checking auth:', error);
-      window.location.href = '/login.html';
-    }
-  }
-  
-  // Run the check when the page loads
-  document.addEventListener('DOMContentLoaded', checkAuth);
-</script>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // State management
+        const state = {
+            products: [],
+            priceLists: [],
+            isLoading: false
+        };
+
+        // Navigation functions
+        function createNewPriceList() {
+            window.location.href = '/create-price-list';
+        }
+
+        function viewMyPriceLists() {
+            window.location.href = '/my-price-lists';
+        }
+
+        function manageTemplates() {
+            window.location.href = '/templates';
+        }
+
+        // Load initial data
+        async function loadDashboardData() {
+            showLoading(true);
+            
+            try {
+                // Load products from Shopify
+                const productsResponse = await fetch('/api/products');
+                if (productsResponse.ok) {
+                    const products = await productsResponse.json();
+                    state.products = products;
+                    document.getElementById('totalProducts').textContent = products.length;
+                } else {
+                    console.error('Failed to load products');
+                    document.getElementById('totalProducts').textContent = 'Error';
+                }
+
+                // Load saved price lists
+                const priceListsResponse = await fetch('/api/price-lists');
+                if (priceListsResponse.ok) {
+                    const priceLists = await priceListsResponse.json();
+                    state.priceLists = priceLists;
+                    document.getElementById('priceListCount').textContent = priceLists.length;
+                    updateRecentActivity(priceLists);
+                }
+
+                // Update last updated time
+                document.getElementById('lastUpdated').textContent = new Date().toLocaleDateString();
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function updateRecentActivity(priceLists) {
+            const container = document.getElementById('recentActivity');
+            
+            if (priceLists.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i data-lucide="file-text" class="h-12 w-12 mx-auto mb-3 text-gray-300"></i>
+                        <p>No price lists created yet</p>
+                        <p class="text-sm">Click "Create New Price List" to get started</p>
+                    </div>
+                `;
+            } else {
+                // Show recent price lists
+                const recentLists = priceLists.slice(0, 5);
+                container.innerHTML = recentLists.map(list => `
+                    <div class="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0">
+                        <div class="flex items-center">
+                            <i data-lucide="file-text" class="h-5 w-5 text-gray-400 mr-3"></i>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">${list.name}</p>
+                                <p class="text-sm text-gray-500">${list.productCount} products</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-gray-500">${formatDate(list.updatedAt)}</span>
+                            <button onclick="editPriceList('${list.id}')" class="text-blue-600 hover:text-blue-800">
+                                <i data-lucide="edit-2" class="h-4 w-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Reinitialize icons
+            lucide.createIcons();
+        }
+
+        function editPriceList(id) {
+            window.location.href = `/edit-price-list/${id}`;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        function showLoading(show) {
+            const modal = document.getElementById('loadingModal');
+            if (show) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // Refresh data
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            loadDashboardData();
+        });
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
+
+        // Update store info if available
+        if (window.shopOrigin) {
+            document.getElementById('storeInfo').textContent = window.shopOrigin;
+        }
+    </script>
 </body>
 </html>
