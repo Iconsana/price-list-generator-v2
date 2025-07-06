@@ -1,0 +1,10 @@
+# extensions/product-supplier-management/shopify.ui.extension.toml
+type = "product_configuration_ui"
+name = "Product Supplier Management"
+
+[capabilities]
+api_access = true
+network_access = true
+
+[settings]
+fields = []
