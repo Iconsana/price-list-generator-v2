@@ -1,15 +1,15 @@
-name = "Multi-Supplier Management"
-client_id = "e617915b661dd5c6e216dcbcae5f7985"
-application_url = "https://cycle3-shopify.onrender.com"
+name = "Price List Generator"
+client_id = "6b5a565d7969924d403aa57f66a1cfea"
+application_url = "https://price-list-generator.onrender.com"
 
 [build]
 dev_store_url = "cycle1-test.myshopify.com"
 
 [auth]
-redirect_urls = ["https://cycle3-shopify.onrender.com/auth/callback"]
+redirect_urls = ["https://price-list-generator.onrender.com/auth/callback"]
 
 [webhooks]
-api_version = "2024-01"
+api_version = "2025-01"
 
 [embedded]
 enabled = true
