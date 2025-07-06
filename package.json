@@ -12,13 +12,11 @@
     "start": "node server.js",
     "start:prod": "NODE_ENV=production node server.js",
     "setup": "prisma generate && prisma migrate deploy",
-    "postinstall": "prisma generate",
     "render-build": "chmod +x build.sh && ./build.sh",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node prisma/seed.js",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "shopify": "shopify",
-    "prisma": "prisma",
     "graphql-codegen": "graphql-codegen",
     "vite": "vite"
   },
@@ -28,7 +26,6 @@
     "npm": ">=8.0.0"
   },
   "dependencies": {
-    "@prisma/client": "^6.2.1",
     "@remix-run/dev": "^2.16.1",
     "@remix-run/fs-routes": "^2.16.1",
     "@remix-run/node": "^2.16.1",
