@@ -14,12 +14,6 @@ import shopify from '../config/shopify.js';
 import { 
   initDB, 
   getDB,
-  getSuppliers, 
-  addSupplier, 
-  getProductSuppliers, 
-  addProductSupplier,
-  getPurchaseOrders,
-  updateProductSupplierStock,
   storeProducts,
   getProducts,
   getProductById
