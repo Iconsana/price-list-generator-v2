@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
+import priceListRoutes from './routes/price-lists.js';
 
 // Load environment variables
 dotenv.config();
@@ -21,6 +22,7 @@ const publicPath = path.join(__dirname, '../public');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use('/api/price-lists', priceListRoutes);
 
 // CORS middleware for development
 app.use((req, res, next) => {
