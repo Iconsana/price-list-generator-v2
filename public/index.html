@@ -5,142 +5,148 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Price List Generator</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+  </style>
 </head>
 <body class="min-h-screen bg-gray-50">
   <div class="container mx-auto p-4 max-w-7xl">
     <!-- Company Information -->
     <h1 class="text-4xl font-bold mb-6">Price List Generator</h1>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <input id="companyName" class="p-2 border" placeholder="Company Name" value="Your Company Name">
-      <input id="companyTagline" class="p-2 border" placeholder="Company Tagline" value="Professional Products & Services">
-      <input id="companyPhone" class="p-2 border" placeholder="Phone" value="+1 234-567-8900">
-      <input id="companyEmail" class="p-2 border" placeholder="Email" value="sales@yourcompany.com">
-      <input id="companyWebsite" class="p-2 border" placeholder="Website" value="https://yourcompany.com">
-      <input id="companyTerms" class="p-2 border" placeholder="Terms" value="Terms & Conditions Apply">
+      <input id="companyName" class="p-2 border rounded" placeholder="Company Name" value="Your Company Name">
+      <input id="companyTagline" class="p-2 border rounded" placeholder="Company Tagline" value="Professional Products & Services">
+      <input id="companyPhone" class="p-2 border rounded" placeholder="Phone" value="+1 234-567-8900">
+      <input id="companyEmail" class="p-2 border rounded" placeholder="Email" value="sales@yourcompany.com">
+      <input id="companyWebsite" class="p-2 border rounded" placeholder="Website" value="https://yourcompany.com">
+      <input id="companyTerms" class="p-2 border rounded" placeholder="Terms" value="Terms & Conditions Apply">
     </div>
 
-    <!-- Bullet Points & Title -->
-    <input id="listTitle" class="p-2 border mb-4 w-full" value="PRODUCT CATALOG">
+    <!-- List Title & Bullets -->
+    <input id="listTitle" class="p-2 border rounded mb-4 w-full" placeholder="List Title" value="PRODUCT CATALOG">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <input id="bulletPoint1" class="p-2 border" value="Professional Grade">
-      <input id="bulletPoint2" class="p-2 border" value="Quality Assured">
-      <input id="bulletPoint3" class="p-2 border" value="Fast Delivery">
+      <input id="bulletPoint1" class="p-2 border rounded" placeholder="Bullet Point 1" value="Professional Grade">
+      <input id="bulletPoint2" class="p-2 border rounded" placeholder="Bullet Point 2" value="Quality Assured">
+      <input id="bulletPoint3" class="p-2 border rounded" placeholder="Bullet Point 3" value="Fast Delivery">
     </div>
 
-    <!-- Product Controls -->
+    <!-- Controls -->
     <div class="flex gap-4 mb-4">
       <button id="addProductBtn" class="bg-blue-600 px-4 py-2 text-white rounded">➕ Add Product</button>
       <button id="previewBtn" class="bg-purple-600 px-4 py-2 text-white rounded">👁️ Show Preview</button>
       <button id="exportBtn" class="bg-green-600 px-4 py-2 text-white rounded">📄 Export PDF</button>
     </div>
 
-    <div id="products-container" class="mb-6"></div>
-    <div id="preview-section" class="hidden"></div>
+    <!-- Products List -->
+    <div id="products-container" class="mb-8"></div>
 
-    <script>
-      let products = [];
-      let showingPreview = false;
+    <!-- Preview Section -->
+    <div id="preview-section" class="hidden mb-8"></div>
+  </div>
 
-      function getCompanyInfo() {
-        return {
-          name: document.getElementById('companyName').value,
-          tagline: document.getElementById('companyTagline').value,
-          phone: document.getElementById('companyPhone').value,
-          email: document.getElementById('companyEmail').value,
-          website: document.getElementById('companyWebsite').value,
-          terms: document.getElementById('companyTerms').value
-        };
-      }
+  <script>
+    let products = [];
+    let showingPreview = false;
 
-      function getBulletPoints() {
-        return {
-          point1: document.getElementById('bulletPoint1').value,
-          point2: document.getElementById('bulletPoint2').value,
-          point3: document.getElementById('bulletPoint3').value
-        };
-      }
+    function getCompanyInfo() {
+      return {
+        name: document.getElementById('companyName').value,
+        tagline: document.getElementById('companyTagline').value,
+        phone: document.getElementById('companyPhone').value,
+        email: document.getElementById('companyEmail').value,
+        website: document.getElementById('companyWebsite').value,
+        terms: document.getElementById('companyTerms').value
+      };
+    }
 
-      function renderPreviewSheet(products, companyInfo, listTitle, bulletPoints, containerId = 'preview-section') {
-        const container = document.getElementById(containerId);
-        if (!container) return;
+    function getBulletPoints() {
+      return {
+        point1: document.getElementById('bulletPoint1').value,
+        point2: document.getElementById('bulletPoint2').value,
+        point3: document.getElementById('bulletPoint3').value
+      };
+    }
 
-        const safeHTML = products.map(product => {
-          const specsHTML = Object.entries(product.specs || {}).map(([key, value]) => {
-            if (!value) return '';
-            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-            return `<div><strong>${label}:</strong> ${value}</div>`;
-          }).join('');
+    function renderPreviewSheet(products, companyInfo, listTitle, bulletPoints, containerId = 'preview-section') {
+      const container = document.getElementById(containerId);
+      if (!container) return;
 
-          return `
-            <div class="product-card" style="border:1px solid #ccc; border-radius:8px; padding:1em; margin-bottom:1em;">
-              <h3 style="font-size:1.2em; margin-bottom:0.5em;">${product.model}</h3>
-              ${product.image ? `<img src="${product.image}" alt="${product.model}" style="max-height:100px; margin-bottom:0.5em;"/>` : '<div style="height:100px; background:#eee; margin-bottom:0.5em; display:flex; align-items:center; justify-content:center;">No image</div>'}
-              <div style="margin-bottom:0.5em;">${specsHTML}</div>
-              <div style="font-weight:bold; margin-bottom:0.3em;">Price: ${product.price}</div>
-              <div style="font-size:0.9em; color:gray;">${product.incVat || ''}</div>
-              ${product.productUrl ? `<div style="margin-top:0.5em;"><a href="${product.productUrl}" target="_blank">View Product</a></div>` : ''}
-            </div>
-          `;
+      const safeHTML = products.map(product => {
+        const specsHTML = Object.entries(product.specs || {}).map(([key, value]) => {
+          if (!value) return '';
+          const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+          return `<div><strong>${label}:</strong> ${value}</div>`;
         }).join('');
 
-        container.innerHTML = `
-          <div class="preview-header" style="background:#1e3a8a; color:white; padding:1em; border-radius:8px; margin-bottom:1em;">
-            <h1 style="margin-bottom:0.2em;">${companyInfo.name}</h1>
-            <p style="font-style:italic;">${companyInfo.tagline}</p>
-            <p style="font-size:0.9em;">${companyInfo.terms}</p>
-            <h2 style="margin-top:1em; font-size:1.4em;">${listTitle}</h2>
-            <ul style="margin-top:0.5em;">
-              <li>${bulletPoints.point1}</li>
-              <li>${bulletPoints.point2}</li>
-              <li>${bulletPoints.point3}</li>
-            </ul>
-          </div>
-          <div class="preview-body">${safeHTML}</div>
-          <div class="preview-footer" style="background:#111827; color:white; padding:1em; border-radius:8px; margin-top:2em;">
-            <p>📞 ${companyInfo.phone} &nbsp;&nbsp; ✉️ ${companyInfo.email} &nbsp;&nbsp; 🌐 ${companyInfo.website}</p>
-            <div style="margin-top:0.5em;">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(companyInfo.website)}" alt="QR Code to website" />
-            </div>
+        return `
+          <div style="border:1px solid #ccc; border-radius:8px; padding:1em; margin-bottom:1em;">
+            <h3 style="font-size:1.2em; margin-bottom:0.5em;">${product.model}</h3>
+            ${product.image ? `<img src="${product.image}" alt="${product.model}" style="max-height:100px; margin-bottom:0.5em;"/>` : '<div style="height:100px; background:#eee; margin-bottom:0.5em; display:flex; align-items:center; justify-content:center;">No image</div>'}
+            <div style="margin-bottom:0.5em;">${specsHTML}</div>
+            <div style="font-weight:bold;">Price: ${product.price}</div>
+            <div style="font-size:0.9em; color:gray;">${product.incVat || ''}</div>
+            ${product.productUrl ? `<div style="margin-top:0.5em;"><a href="${product.productUrl}" target="_blank">View Product</a></div>` : ''}
           </div>
         `;
-      }
+      }).join('');
 
-      function addProduct() {
-        products.push({
-          id: Date.now(),
-          model: 'Sample Product',
-          price: 'R 0.00',
-          specs: { sku: '', category: '', description: '' },
-          incVat: 'INCL VAT',
-          image: null,
-          productUrl: ''
-        });
-        alert('Product added! Try preview now.');
-      }
+      container.innerHTML = `
+        <div style="background:#1e3a8a; color:white; padding:1em; border-radius:8px; margin-bottom:1em;">
+          <h1>${companyInfo.name}</h1>
+          <p style="font-style:italic;">${companyInfo.tagline}</p>
+          <p>${companyInfo.terms}</p>
+          <h2 style="margin-top:1em;">${listTitle}</h2>
+          <ul>
+            <li>${bulletPoints.point1}</li>
+            <li>${bulletPoints.point2}</li>
+            <li>${bulletPoints.point3}</li>
+          </ul>
+        </div>
+        <div>${safeHTML}</div>
+        <div style="background:#111827; color:white; padding:1em; border-radius:8px;">
+          <p>📞 ${companyInfo.phone} &nbsp; ✉️ ${companyInfo.email} &nbsp; 🌐 ${companyInfo.website}</p>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(companyInfo.website)}" alt="QR Code" />
+        </div>
+      `;
+    }
 
-      function togglePreview() {
-        const section = document.getElementById('preview-section');
-        showingPreview = !showingPreview;
-        if (showingPreview) {
-          renderPreviewSheet(products, getCompanyInfo(), document.getElementById('listTitle').value, getBulletPoints());
-          section.classList.remove('hidden');
-        } else {
-          section.classList.add('hidden');
-        }
-      }
+    function addProduct() {
+      products.push({
+        id: Date.now(),
+        model: 'Sample Product',
+        price: 'R 0.00',
+        specs: { sku: '', category: '', description: '' },
+        incVat: 'INCL VAT',
+        image: null,
+        productUrl: ''
+      });
+      alert('Product added! Click "Show Preview" to view.');
+    }
 
-      function exportToPDF() {
-        const printWindow = window.open('', '_blank');
-        renderPreviewSheet(products, getCompanyInfo(), document.getElementById('listTitle').value, getBulletPoints(), 'preview-section');
-        const content = document.getElementById('preview-section').innerHTML;
-        printWindow.document.write(`<html><head><title>Export</title></head><body>${content}<script>window.print();</script></body></html>`);
-        printWindow.document.close();
+    function togglePreview() {
+      const section = document.getElementById('preview-section');
+      showingPreview = !showingPreview;
+      if (showingPreview) {
+        renderPreviewSheet(products, getCompanyInfo(), document.getElementById('listTitle').value, getBulletPoints());
+        section.classList.remove('hidden');
+      } else {
+        section.classList.add('hidden');
       }
+    }
 
-      document.getElementById('addProductBtn').addEventListener('click', addProduct);
-      document.getElementById('previewBtn').addEventListener('click', togglePreview);
-      document.getElementById('exportBtn').addEventListener('click', exportToPDF);
-    </script>
-  </div>
+    function exportToPDF() {
+      const temp = document.createElement('div');
+      document.body.appendChild(temp);
+      renderPreviewSheet(products, getCompanyInfo(), document.getElementById('listTitle').value, getBulletPoints(), temp.id = 'temp-preview');
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(temp.innerHTML + `<script>window.print();</script>`);
+      printWindow.document.close();
+      document.body.removeChild(temp);
+    }
+
+    document.getElementById('addProductBtn').addEventListener('click', addProduct);
+    document.getElementById('previewBtn').addEventListener('click', togglePreview);
+    document.getElementById('exportBtn').addEventListener('click', exportToPDF);
+  </script>
 </body>
 </html>
