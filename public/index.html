@@ -1266,200 +1266,203 @@
         }
 
         // Event Listeners
-        elements.shopifyPanelBtn.addEventListener('click', () => {
-            elements.shopifyPanel.classList.toggle('hidden');
-        });
+        document.addEventListener('DOMContentLoaded', function() {
+            // Shopify Panel
+            elements.shopifyPanelBtn?.addEventListener('click', () => {
+                elements.shopifyPanel.classList.toggle('hidden');
+            });
 
-        elements.connectBtn.addEventListener('click', connectToShopify);
+            elements.connectBtn?.addEventListener('click', connectToShopify);
 
-        elements.cancelBtn.addEventListener('click', () => {
-            elements.shopifyPanel.classList.add('hidden');
-        });
+            elements.cancelBtn?.addEventListener('click', () => {
+                elements.shopifyPanel.classList.add('hidden');
+            });
 
-        elements.disconnectBtn.addEventListener('click', () => {
-            if (confirm('Are you sure you want to disconnect from Shopify?')) {
-                state.shopifyConnected = false;
-                state.shopifyProducts = [];
-                state.shopifyCollections = [];
-                state.productTypes = [];
-                state.vendors = [];
-                state.selectedProducts = [];
+            elements.disconnectBtn?.addEventListener('click', () => {
+                if (confirm('Are you sure you want to disconnect from Shopify?')) {
+                    state.shopifyConnected = false;
+                    state.shopifyProducts = [];
+                    state.shopifyCollections = [];
+                    state.productTypes = [];
+                    state.vendors = [];
+                    state.selectedProducts = [];
+                    
+                    updateConnectionStatus(false);
+                    elements.connectionForm.classList.remove('hidden');
+                    elements.connectedState.classList.add('hidden');
+                    elements.storeName.value = '';
+                    elements.accessToken.value = '';
+                }
+            });
+
+            elements.refreshBtn?.addEventListener('click', async () => {
+                if (!state.shopifyConnected) return;
+
+                const refreshIcon = document.getElementById('refreshIcon');
+                if (refreshIcon) refreshIcon.textContent = '🔄';
                 
-                updateConnectionStatus(false);
-                elements.connectionForm.classList.remove('hidden');
-                elements.connectedState.classList.add('hidden');
-                elements.storeName.value = '';
-                elements.accessToken.value = '';
-            }
-        });
+                try {
+                    const [products, collections] = await Promise.all([
+                        shopifyAPI.fetchProducts(state.shopifyStore, state.shopifyToken),
+                        shopifyAPI.fetchCollections(state.shopifyStore, state.shopifyToken)
+                    ]);
 
-        elements.refreshBtn.addEventListener('click', async () => {
-            if (!state.shopifyConnected) return;
+                    state.shopifyProducts = products;
+                    state.shopifyCollections = collections;
+                    state.productTypes = [...new Set(products.map(p => p.product_type).filter(Boolean))];
+                    state.vendors = [...new Set(products.map(p => p.vendor).filter(Boolean))];
 
-            const refreshIcon = document.getElementById('refreshIcon');
-            refreshIcon.textContent = '🔄';
-            
-            try {
-                const [products, collections] = await Promise.all([
-                    shopifyAPI.fetchProducts(state.shopifyStore, state.shopifyToken),
-                    shopifyAPI.fetchCollections(state.shopifyStore, state.shopifyToken)
-                ]);
+                    updateStats(products, collections, state.productTypes, state.vendors);
+                    populateFilters(collections, state.productTypes, state.vendors);
+                    renderShopifyProducts(getFilteredProducts());
 
-                state.shopifyProducts = products;
-                state.shopifyCollections = collections;
-                state.productTypes = [...new Set(products.map(p => p.product_type).filter(Boolean))];
-                state.vendors = [...new Set(products.map(p => p.vendor).filter(Boolean))];
+                    alert('Shopify data refreshed successfully!');
+                } catch (error) {
+                    console.error('Error refreshing Shopify data:', error);
+                    alert(`Error refreshing data: ${error.message}`);
+                } finally {
+                    if (refreshIcon) refreshIcon.textContent = '🔄';
+                }
+            });
 
-                updateStats(products, collections, state.productTypes, state.vendors);
-                populateFilters(collections, state.productTypes, state.vendors);
+            // Filter controls
+            elements.filterMode?.addEventListener('change', (e) => {
+                const mode = e.target.value;
+                
+                // Hide all filter options
+                elements.collectionFilter?.classList.add('hidden');
+                elements.typeFilter?.classList.add('hidden');
+                elements.vendorFilter?.classList.add('hidden');
+                elements.customFilters?.classList.add('hidden');
+                
+                // Show relevant filter
+                switch (mode) {
+                    case 'collection':
+                        elements.collectionFilter?.classList.remove('hidden');
+                        break;
+                    case 'type':
+                        elements.typeFilter?.classList.remove('hidden');
+                        break;
+                    case 'vendor':
+                        elements.vendorFilter?.classList.remove('hidden');
+                        break;
+                    case 'custom':
+                        elements.customFilters?.classList.remove('hidden');
+                        break;
+                }
+                
                 renderShopifyProducts(getFilteredProducts());
+            });
 
-                alert('Shopify data refreshed successfully!');
-            } catch (error) {
-                console.error('Error refreshing Shopify data:', error);
-                alert(`Error refreshing data: ${error.message}`);
-            } finally {
-                refreshIcon.textContent = '🔄';
-            }
-        });
+            elements.productSearch?.addEventListener('input', () => {
+                renderShopifyProducts(getFilteredProducts());
+            });
 
-        elements.filterMode.addEventListener('change', (e) => {
-            const mode = e.target.value;
+            // Selection controls
+            elements.selectAllBtn?.addEventListener('click', () => {
+                const filteredProducts = getFilteredProducts();
+                state.selectedProducts = filteredProducts.map(p => p.id.toString());
+                updateSelectionUI();
+                renderShopifyProducts(filteredProducts);
+            });
+
+            elements.clearSelectionBtn?.addEventListener('click', () => {
+                state.selectedProducts = [];
+                updateSelectionUI();
+                renderShopifyProducts(getFilteredProducts());
+            });
+
+            elements.addSelectedBtn?.addEventListener('click', addSelectedProducts);
+
+            // Manual product buttons
+            elements.addManualBtn?.addEventListener('click', addManualProduct);
+            document.getElementById('emptyConnectBtn')?.addEventListener('click', () => {
+                elements.shopifyPanel.classList.remove('hidden');
+            });
+            document.getElementById('emptyManualBtn')?.addEventListener('click', addManualProduct);
+
+            // Logo upload
+            elements.logoUploadBtn?.addEventListener('click', () => {
+                elements.logoInput.click();
+            });
+
+            elements.logoInput?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        state.companyLogo = e.target.result;
+                        elements.logoPreview.innerHTML = `
+                            <img src="${e.target.result}" alt="Company logo" class="w-full h-full object-contain">
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Preview and export
+            elements.previewBtn?.addEventListener('click', togglePreview);
+            document.getElementById('exportBtn')?.addEventListener('click', exportToPDF);
+
+            // Search functionality
+            document.getElementById('priceListSearch')?.addEventListener('input', renderPriceListProducts);
+
+            // View mode controls
+            document.getElementById('viewModeGrid')?.addEventListener('click', () => {
+                state.viewMode = 'grid';
+                document.getElementById('viewModeGrid').className = 'p-3 rounded-lg transition-colors bg-blue-600 text-white';
+                document.getElementById('viewModeList').className = 'p-3 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
+                elements.priceListProducts.className = 'grid grid-cols-1 lg:grid-cols-2 gap-6';
+            });
+
+            document.getElementById('viewModeList')?.addEventListener('click', () => {
+                state.viewMode = 'list';
+                document.getElementById('viewModeList').className = 'p-3 rounded-lg transition-colors bg-blue-600 text-white';
+                document.getElementById('viewModeGrid').className = 'p-3 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
+                elements.priceListProducts.className = 'space-y-4';
+            });
+
+            // Additional filter change listeners
+            document.getElementById('selectedCollection')?.addEventListener('change', () => {
+                renderShopifyProducts(getFilteredProducts());
+            });
+
+            document.getElementById('selectedType')?.addEventListener('change', () => {
+                renderShopifyProducts(getFilteredProducts());
+            });
+
+            document.getElementById('selectedVendor')?.addEventListener('change', () => {
+                renderShopifyProducts(getFilteredProducts());
+            });
+
+            document.getElementById('priceMin')?.addEventListener('input', () => {
+                renderShopifyProducts(getFilteredProducts());
+            });
+
+            document.getElementById('priceMax')?.addEventListener('input', () => {
+                renderShopifyProducts(getFilteredProducts());
+            });
+
+            // Initialize the application
+            console.log('🚀 Shopify Price List Generator initialized');
+            renderPriceListProducts();
+
+            // Update filtered count initially
+            const updateFilteredCount = () => {
+                const filteredProducts = getFilteredProducts();
+                const filteredCountElement = document.getElementById('filteredCount');
+                if (filteredCountElement) {
+                    filteredCountElement.textContent = filteredProducts.length;
+                }
+            };
+
+            // Update filtered count when filter changes
+            elements.filterMode?.addEventListener('change', updateFilteredCount);
+            elements.productSearch?.addEventListener('input', updateFilteredCount);
             
-            // Hide all filter options
-            elements.collectionFilter.classList.add('hidden');
-            elements.typeFilter.classList.add('hidden');
-            elements.vendorFilter.classList.add('hidden');
-            elements.customFilters.classList.add('hidden');
-            
-            // Show relevant filter
-            switch (mode) {
-                case 'collection':
-                    elements.collectionFilter.classList.remove('hidden');
-                    break;
-                case 'type':
-                    elements.typeFilter.classList.remove('hidden');
-                    break;
-                case 'vendor':
-                    elements.vendorFilter.classList.remove('hidden');
-                    break;
-                case 'custom':
-                    elements.customFilters.classList.remove('hidden');
-                    break;
-            }
-            
-            renderShopifyProducts(getFilteredProducts());
+            // Initial update
+            updateFilteredCount();
         });
-
-        elements.productSearch.addEventListener('input', () => {
-            renderShopifyProducts(getFilteredProducts());
-        });
-
-        document.getElementById('selectedCollection').addEventListener('change', () => {
-            renderShopifyProducts(getFilteredProducts());
-        });
-
-        document.getElementById('selectedType').addEventListener('change', () => {
-            renderShopifyProducts(getFilteredProducts());
-        });
-
-        document.getElementById('selectedVendor').addEventListener('change', () => {
-            renderShopifyProducts(getFilteredProducts());
-        });
-
-        document.getElementById('priceMin').addEventListener('input', () => {
-            renderShopifyProducts(getFilteredProducts());
-        });
-
-        document.getElementById('priceMax').addEventListener('input', () => {
-            renderShopifyProducts(getFilteredProducts());
-        });
-
-        elements.selectAllBtn.addEventListener('click', () => {
-            const filteredProducts = getFilteredProducts();
-            state.selectedProducts = filteredProducts.map(p => p.id.toString());
-            updateSelectionUI();
-            renderShopifyProducts(filteredProducts);
-        });
-
-        elements.clearSelectionBtn.addEventListener('click', () => {
-            state.selectedProducts = [];
-            updateSelectionUI();
-            renderShopifyProducts(getFilteredProducts());
-        });
-
-        elements.addSelectedBtn.addEventListener('click', addSelectedProducts);
-
-        elements.addManualBtn.addEventListener('click', addManualProduct);
-
-        document.getElementById('emptyConnectBtn').addEventListener('click', () => {
-            elements.shopifyPanel.classList.remove('hidden');
-        });
-
-        document.getElementById('emptyManualBtn').addEventListener('click', addManualProduct);
-
-        elements.logoUploadBtn.addEventListener('click', () => {
-            elements.logoInput.click();
-        });
-
-        elements.logoInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    state.companyLogo = e.target.result;
-                    elements.logoPreview.innerHTML = `
-                        <img src="${e.target.result}" alt="Company logo" class="w-full h-full object-contain">
-                    `;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        elements.previewBtn.addEventListener('click', togglePreview);
-
-        document.getElementById('exportBtn').addEventListener('click', exportToPDF);
-
-        document.getElementById('priceListSearch').addEventListener('input', renderPriceListProducts);
-
-        document.getElementById('viewModeGrid').addEventListener('click', () => {
-            state.viewMode = 'grid';
-            document.getElementById('viewModeGrid').className = 'p-3 rounded-lg transition-colors bg-blue-600 text-white';
-            document.getElementById('viewModeList').className = 'p-3 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
-            elements.priceListProducts.className = 'grid grid-cols-1 lg:grid-cols-2 gap-6';
-        });
-
-        document.getElementById('viewModeList').addEventListener('click', () => {
-            state.viewMode = 'list';
-            document.getElementById('viewModeList').className = 'p-3 rounded-lg transition-colors bg-blue-600 text-white';
-            document.getElementById('viewModeGrid').className = 'p-3 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
-            elements.priceListProducts.className = 'space-y-4';
-        });
-
-        // Global functions for inline event handlers
-        window.toggleProductSelection = toggleProductSelection;
-        window.updateProduct = updateProduct;
-        window.updateProductSpec = updateProductSpec;
-        window.updateProductImage = updateProductImage;
-        window.removeProduct = removeProduct;
-        window.duplicateProduct = duplicateProduct;
-
-        // Initialize the application
-        console.log('🚀 Shopify Price List Generator initialized');
-        renderPriceListProducts();
-
-        // Update filtered count initially
-        const updateFilteredCount = () => {
-            const filteredProducts = getFilteredProducts();
-            document.getElementById('filteredCount').textContent = filteredProducts.length;
-        };
-
-        // Update filtered count when filter changes
-        elements.filterMode.addEventListener('change', updateFilteredCount);
-        elements.productSearch.addEventListener('input', updateFilteredCount);
-        
-        // Initial update
-        updateFilteredCount();
 
     </script>
 </body>
