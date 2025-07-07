@@ -1167,14 +1167,23 @@
 
         function exportToPDF() {
             if (state.products.length === 0) {
-                alert('Please add some products before exporting.');
+                alert('Please add some products before exporting.\n\nTip: Click "Add Manual Product" to create a test product, or connect to Shopify to import products.');
                 return;
             }
 
-            generatePreview();
+            // Make sure preview is generated first
+            if (!state.showPreview) {
+                generatePreview();
+            }
+
+            const previewContent = document.getElementById('previewContent')?.innerHTML;
+            
+            if (!previewContent || previewContent.trim() === '') {
+                alert('Error: Could not generate preview content. Please try adding products first.');
+                return;
+            }
 
             const printWindow = window.open('', '_blank');
-            const previewContent = document.getElementById('previewContent').outerHTML;
 
             const printDocument = `
                 <!DOCTYPE html>
