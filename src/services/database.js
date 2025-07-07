@@ -24,11 +24,11 @@ export const initDB = async () => {
     
 // Default data structure
 const defaultData = {
-  suppliers: [],
-  productSuppliers: [],
-  purchaseOrders: [],
-  products: [],
-  quotes: []  // Add this line
+  priceLists: [],      // NEW: Saved price lists
+  documents: [],       // RENAMED: from 'quotes'
+  templates: [],       // NEW: Layout templates  
+  settings: [],        // NEW: Company branding
+  products: []         // KEEP: Cached Shopify products
 };
 
     // Create db file if it doesn't exist
