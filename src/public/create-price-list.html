@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Price List</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50">
+  <div class="container mx-auto p-4 max-w-7xl">
+    <h1 class="text-4xl font-bold mb-6">Create Price List</h1>
+    
+    <!-- Product Selection -->
+    <div id="products-container" class="mb-8"></div>
+    
+    <!-- Selected Products -->
+    <div id="selected-products" class="mb-8"></div>
+    
+    <!-- Export Controls -->
+    <button id="exportBtn" class="bg-green-600 px-4 py-2 text-white rounded">
+      📄 Export PDF
+    </button>
+  </div>
+
+  <script>
+    // ✅ Match your exact vanilla JS pattern
+    let selectedProducts = [];
+    let allProducts = [];
+
+    // Fetch products from Shopify
+    async function loadProducts() {
+      try {
+        const response = await fetch('/api/products');
+        allProducts = await response.json();
+        renderProducts();
+      } catch (error) {
+        console.error('Error loading products:', error);
+      }
+    }
+
+    // Render products grid
+    function renderProducts() {
+      const container = document.getElementById('products-container');
+      container.innerHTML = allProducts.map(product => `
+        <div class="border rounded p-4 cursor-pointer hover:bg-blue-50" 
+             onclick="toggleProduct('${product.id}')">
+          <h3 class="font-medium">${product.title}</h3>
+          <p class="text-gray-600">$${product.variants[0]?.price || '0.00'}</p>
+        </div>
+      `).join('');
+    }
+
+    // Toggle product selection
+    function toggleProduct(productId) {
+      const product = allProducts.find(p => p.id === productId);
+      const index = selectedProducts.findIndex(p => p.id === productId);
+      
+      if (index > -1) {
+        selectedProducts.splice(index, 1);
+      } else {
+        selectedProducts.push(product);
+      }
+      
+      renderSelectedProducts();
+    }
+
+    // Render selected products
+    function renderSelectedProducts() {
+      const container = document.getElementById('selected-products');
+      container.innerHTML = `
+        <h2 class="text-xl font-bold mb-4">Selected Products (${selectedProducts.length})</h2>
+        ${selectedProducts.map(product => `
+          <div class="flex justify-between items-center p-2 border-b">
+            <span>${product.title}</span>
+            <button onclick="toggleProduct('${product.id}')" class="text-red-500">Remove</button>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    // Export to PDF
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/price-lists/export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ products: selectedProducts })
+        });
+        
+        if (response.ok) {
+          // Handle PDF download
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'price-list.pdf';
+          a.click();
+        }
+      } catch (error) {
+        console.error('Export error:', error);
+      }
+    });
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', loadProducts);
+  </script>
+</body>
+</html>
