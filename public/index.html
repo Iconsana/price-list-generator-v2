@@ -5,354 +5,366 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Price List Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .product-card {
-            transition: all 0.3s ease;
-        }
-        .product-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        .preview-card {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-        .price-badge {
-            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-        }
-    </style>
 </head>
 <body class="min-h-screen bg-gray-50">
-    <div class="container mx-auto p-4 lg:p-8 max-w-7xl">
-        <!-- Main Header -->
-        <div class="bg-white rounded-xl shadow-xl mb-8">
-            <div class="p-6 lg:p-8 border-b border-gray-200">
-                <h1 class="text-2xl lg:text-4xl font-bold text-gray-900 mb-3">Price List Generator</h1>
-                <p class="text-gray-600">Create professional price lists and catalogs</p>
+    <div class="container mx-auto p-4 max-w-7xl">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-xl mb-8 p-8">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">Price List Generator</h1>
+            
+            <!-- Company Information -->
+            <h2 class="text-2xl font-bold mb-6">Company Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Company Name</label>
+                    <input id="companyName" type="text" value="Your Company Name" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Company Tagline</label>
+                    <input id="companyTagline" type="text" value="Professional Products & Services" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Phone</label>
+                    <input id="companyPhone" type="text" value="+1 234-567-8900" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Email</label>
+                    <input id="companyEmail" type="email" value="sales@yourcompany.com" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Website</label>
+                    <input id="companyWebsite" type="url" value="https://yourcompany.com" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Terms</label>
+                    <input id="companyTerms" type="text" value="Terms & Conditions Apply" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
             </div>
 
-            <!-- Company Information -->
-            <div class="p-6 lg:p-8">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">Company Information</h3>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Company Name</label>
-                        <input id="companyName" type="text" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="Your Company Name">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Company Logo</label>
-                        <div class="flex gap-4 items-center">
-                            <div id="logoPreview" class="w-24 h-24 bg-gray-100 rounded-lg border-2 border-gray-300 flex items-center justify-center overflow-hidden">
-                                <div class="text-gray-400 text-center">
-                                    <div class="text-2xl mb-1">🏢</div>
-                                    <div class="text-xs">No Logo</div>
-                                </div>
-                            </div>
-                            <input id="logoInput" type="file" accept="image/*" class="hidden">
-                            <button id="logoUploadBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Upload Logo</button>
-                        </div>
-                    </div>
+            <!-- List Configuration -->
+            <h2 class="text-2xl font-bold mb-6">List Configuration</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">List Title</label>
+                    <input id="listTitle" type="text" value="PRODUCT CATALOG" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Phone</label>
-                        <input id="companyPhone" type="text" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="+1 234-567-8900">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Email</label>
-                        <input id="companyEmail" type="email" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="sales@yourcompany.com">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Website</label>
-                        <input id="companyWebsite" type="url" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="https://yourcompany.com">
-                    </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Bullet Points</label>
+                    <input id="bulletPoint1" type="text" value="Professional Grade" class="w-full p-2 border-2 border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500">
+                    <input id="bulletPoint2" type="text" value="Quality Assured" class="w-full p-2 border-2 border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500">
+                    <input id="bulletPoint3" type="text" value="Fast Delivery" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                 </div>
+            </div>
 
-                <!-- Product Management -->
-                <div class="mb-8">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-bold text-gray-900">Price List Products (<span id="productCount">0</span>)</h3>
-                        <div class="flex gap-2">
-                            <button id="previewBtn" class="px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium">
-                                <span id="previewIcon">👁️</span> <span id="previewText">Show Preview</span>
-                            </button>
-                            <button id="addProductBtn" class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">➕ Add Product</button>
-                        </div>
-                    </div>
-
-                    <!-- Products Container -->
-                    <div id="productsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Products will be added here -->
-                    </div>
-
-                    <!-- Empty State -->
-                    <div id="emptyState" class="text-center py-16 bg-gray-50 rounded-xl">
-                        <div class="text-6xl mb-4">📦</div>
-                        <h3 class="text-xl font-semibold text-gray-700 mb-2">No products yet!</h3>
-                        <p class="text-gray-500 mb-6">Add products to create your price list</p>
-                        <button onclick="addProduct()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Add Your First Product</button>
-                    </div>
+            <!-- Product Management -->
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Products (<span id="productCount">0</span>)</h2>
+                <div class="flex gap-4">
+                    <button id="addProductBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors">
+                        ➕ Add Product
+                    </button>
+                    <button id="previewBtn" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors">
+                        👁️ Show Preview
+                    </button>
+                    <button id="exportBtn" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors">
+                        📄 Export PDF
+                    </button>
                 </div>
+            </div>
 
-                <!-- Export Section -->
-                <div id="exportSection" class="text-center mt-8 hidden">
-                    <button id="exportBtn" class="px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold text-lg">📥 Export to PDF</button>
-                </div>
+            <!-- Products Container -->
+            <div id="products-container" class="mb-8"></div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="text-center py-16 bg-gray-100 rounded-xl">
+                <div class="text-6xl mb-4">📦</div>
+                <h3 class="text-xl font-bold mb-2">No products yet</h3>
+                <p class="text-gray-600 mb-6">Add your first product to get started</p>
+                <button id="emptyAddBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Add First Product
+                </button>
             </div>
         </div>
 
         <!-- Preview Section -->
-        <div id="previewSection" class="bg-white rounded-xl shadow-xl hidden">
-            <div class="p-6 border-b border-gray-200">
-                <h3 class="text-2xl font-bold text-gray-900">Preview</h3>
-            </div>
-            <div id="previewContent"></div>
-        </div>
+        <div id="preview-section" class="bg-white rounded-xl shadow-xl p-8 hidden mb-8"></div>
     </div>
 
     <script>
-        // Application State
-        let appState = {
-            products: [],
-            companyLogo: null,
-            showPreview: false
-        };
+        // Initialize products array
+        let products = [];
+        let showingPreview = false;
 
-        // Add Product
+        // Get company info from form
+        function getCompanyInfo() {
+            return {
+                name: document.getElementById('companyName').value || 'Your Company Name',
+                tagline: document.getElementById('companyTagline').value || 'Professional Products & Services',
+                phone: document.getElementById('companyPhone').value || '+1 234-567-8900',
+                email: document.getElementById('companyEmail').value || 'sales@yourcompany.com',
+                website: document.getElementById('companyWebsite').value || 'https://yourcompany.com',
+                terms: document.getElementById('companyTerms').value || 'Terms & Conditions Apply'
+            };
+        }
+
+        // Get bullet points from form
+        function getBulletPoints() {
+            return {
+                point1: document.getElementById('bulletPoint1').value || 'Professional Grade',
+                point2: document.getElementById('bulletPoint2').value || 'Quality Assured',
+                point3: document.getElementById('bulletPoint3').value || 'Fast Delivery'
+            };
+        }
+
+        // YOUR EXACT preview function
+        function renderPreviewSheet(products, companyInfo, listTitle, bulletPoints, containerId = 'preview-section') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const safeHTML = products.map(product => {
+                const specsHTML = Object.entries(product.specs || {}).map(([key, value]) => {
+                    if (!value) return '';
+                    const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                    return `<div><strong>${label}:</strong> ${value}</div>`;
+                }).join('');
+                return `
+                    <div class="product-card" style="border:1px solid #ccc; border-radius:8px; padding:1em; margin-bottom:1em;">
+                        <h3 style="font-size:1.2em; margin-bottom:0.5em;">${product.model}</h3>
+                        ${product.image ? `<img src="${product.image}" alt="${product.model}" style="max-height:100px; margin-bottom:0.5em;"/>` : '<div style="height:100px; background:#eee; margin-bottom:0.5em; display:flex; align-items:center; justify-content:center;">No image</div>'}
+                        <div style="margin-bottom:0.5em;">${specsHTML}</div>
+                        <div style="font-weight:bold; margin-bottom:0.3em;">Price: ${product.price}</div>
+                        <div style="font-size:0.9em; color:gray;">${product.incVat || ''}</div>
+                        ${product.productUrl ? `<div style="margin-top:0.5em;"><a href="${product.productUrl}" target="_blank">View Product</a></div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            container.innerHTML = `
+                <div class="preview-header" style="background:#1e3a8a; color:white; padding:1em; border-radius:8px; margin-bottom:1em;">
+                    <h1 style="margin-bottom:0.2em;">${companyInfo.name}</h1>
+                    <p style="font-style:italic;">${companyInfo.tagline}</p>
+                    <p style="font-size:0.9em;">${companyInfo.terms}</p>
+                    <h2 style="margin-top:1em; font-size:1.4em;">${listTitle}</h2>
+                    <ul style="margin-top:0.5em;">
+                        <li>${bulletPoints.point1}</li>
+                        <li>${bulletPoints.point2}</li>
+                        <li>${bulletPoints.point3}</li>
+                    </ul>
+                </div>
+                <div class="preview-body">
+                    ${safeHTML}
+                </div>
+                <div class="preview-footer" style="background:#111827; color:white; padding:1em; border-radius:8px; margin-top:2em;">
+                    <p>📞 ${companyInfo.phone} &nbsp;&nbsp; ✉️ ${companyInfo.email} &nbsp;&nbsp; 🌐 ${companyInfo.website}</p>
+                    <div style="margin-top:0.5em;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(companyInfo.website)}" alt="QR Code to website" />
+                    </div>
+                </div>
+            `;
+        }
+
+        // Add product function
         function addProduct() {
             const newProduct = {
                 id: Date.now(),
-                name: '',
+                model: '',
                 price: '',
-                description: '',
-                image: null
+                image: null,
+                specs: {
+                    description: '',
+                    sku: '',
+                    category: ''
+                },
+                incVat: 'INCL VAT',
+                productUrl: ''
             };
             
-            appState.products.push(newProduct);
+            products.push(newProduct);
             renderProducts();
             updateUI();
         }
 
-        // Remove Product
+        // Remove product
         function removeProduct(id) {
             if (confirm('Remove this product?')) {
-                appState.products = appState.products.filter(p => p.id !== parseInt(id));
+                products = products.filter(p => p.id !== parseInt(id));
                 renderProducts();
                 updateUI();
             }
         }
 
-        // Update Product
-        function updateProduct(id, field, value) {
-            const product = appState.products.find(p => p.id === parseInt(id));
+        // Update product field
+        function updateProductField(id, field, value) {
+            const product = products.find(p => p.id === parseInt(id));
             if (product) {
-                product[field] = value;
+                if (field.includes('.')) {
+                    const parts = field.split('.');
+                    product[parts[0]][parts[1]] = value;
+                } else {
+                    product[field] = value;
+                }
             }
         }
 
-        // Update Product Image
-        function updateProductImage(id, file) {
+        // Handle image upload
+        function handleImageUpload(id, file) {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    updateProduct(id, 'image', e.target.result);
+                    updateProductField(id, 'image', e.target.result);
                     renderProducts();
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        // Render Products
+        // Render products
         function renderProducts() {
-            const container = document.getElementById('productsContainer');
+            const container = document.getElementById('products-container');
             
-            if (appState.products.length === 0) {
+            if (products.length === 0) {
                 container.innerHTML = '';
                 return;
             }
 
-            container.innerHTML = appState.products.map(product => `
-                <div class="border-2 border-gray-200 rounded-xl p-6 bg-white product-card">
-                    <div class="flex justify-between items-start mb-4">
-                        <h4 class="text-xl font-bold text-gray-900">Product ${product.id}</h4>
-                        <button onclick="removeProduct(${product.id})" class="text-red-600 hover:text-red-800 p-2">🗑️</button>
-                    </div>
+            container.innerHTML = products.map(product => 
+                '<div class="border-2 border-gray-200 rounded-xl p-6 mb-6 bg-white shadow-sm">' +
+                    '<div class="flex justify-between items-start mb-4">' +
+                        '<h3 class="text-xl font-bold text-gray-900">Product ' + product.id + '</h3>' +
+                        '<button onclick="removeProduct(' + product.id + ')" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50 transition-colors">' +
+                            '🗑️ Remove' +
+                        '</button>' +
+                    '</div>' +
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Product Image</label>
-                            <div class="w-full h-24 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
-                                ${product.image ? `<img src="${product.image}" class="w-full h-full object-cover">` : '<span class="text-gray-400">No image</span>'}
-                            </div>
-                            <input type="file" accept="image/*" onchange="updateProductImage(${product.id}, this.files[0])" class="w-full text-xs mt-2">
-                        </div>
+                    '<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">' +
+                        '<div>' +
+                            '<label class="block font-bold mb-2 text-gray-700">Product Name</label>' +
+                            '<input type="text" value="' + (product.model || '') + '" onchange="updateProductField(' + product.id + ', \'model\', this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter product name">' +
+                        '</div>' +
                         
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Product Name</label>
-                                <input type="text" value="${product.name}" onchange="updateProduct(${product.id}, 'name', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg" placeholder="Enter product name">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Price</label>
-                                <input type="text" value="${product.price}" onchange="updateProduct(${product.id}, 'price', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg" placeholder="R 1,000.00">
-                            </div>
-                        </div>
-                    </div>
+                        '<div>' +
+                            '<label class="block font-bold mb-2 text-gray-700">Price</label>' +
+                            '<input type="text" value="' + (product.price || '') + '" onchange="updateProductField(' + product.id + ', \'price\', this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="R 1,000.00">' +
+                        '</div>' +
+                        
+                        '<div>' +
+                            '<label class="block font-bold mb-2 text-gray-700">SKU</label>' +
+                            '<input type="text" value="' + (product.specs.sku || '') + '" onchange="updateProductField(' + product.id + ', \'specs.sku\', this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Product SKU">' +
+                        '</div>' +
+                        
+                        '<div>' +
+                            '<label class="block font-bold mb-2 text-gray-700">Category</label>' +
+                            '<input type="text" value="' + (product.specs.category || '') + '" onchange="updateProductField(' + product.id + ', \'specs.category\', this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Product category">' +
+                        '</div>' +
+                    '</div>' +
                     
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                        <textarea onchange="updateProduct(${product.id}, 'description', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg" rows="3" placeholder="Product description">${product.description}</textarea>
-                    </div>
-                </div>
-            `).join('');
+                    '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">' +
+                        '<div>' +
+                            '<label class="block font-bold mb-2 text-gray-700">Description</label>' +
+                            '<textarea onchange="updateProductField(' + product.id + ', \'specs.description\', this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Product description">' + (product.specs.description || '') + '</textarea>' +
+                        '</div>' +
+                        
+                        '<div>' +
+                            '<label class="block font-bold mb-2 text-gray-700">Product Image</label>' +
+                            '<input type="file" accept="image/*" onchange="handleImageUpload(' + product.id + ', this.files[0])" class="w-full p-2 border-2 border-gray-300 rounded-lg mb-2">' +
+                            (product.image ? '<img src="' + product.image + '" class="h-20 w-20 object-cover rounded border">' : '<div class="h-20 w-20 bg-gray-100 rounded border flex items-center justify-center text-gray-400">No image</div>') +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            ).join('');
         }
 
         // Update UI
         function updateUI() {
-            document.getElementById('productCount').textContent = appState.products.length;
-            document.getElementById('emptyState').style.display = appState.products.length === 0 ? 'block' : 'none';
-            document.getElementById('exportSection').style.display = appState.products.length > 0 ? 'block' : 'none';
+            document.getElementById('productCount').textContent = products.length;
+            document.getElementById('empty-state').style.display = products.length === 0 ? 'block' : 'none';
         }
 
-        // Toggle Preview
+        // Show/hide preview
         function togglePreview() {
-            appState.showPreview = !appState.showPreview;
-            const previewSection = document.getElementById('previewSection');
+            showingPreview = !showingPreview;
+            const previewSection = document.getElementById('preview-section');
             const previewBtn = document.getElementById('previewBtn');
             
-            if (appState.showPreview) {
+            if (showingPreview) {
+                if (products.length === 0) {
+                    alert('Add some products first!');
+                    showingPreview = false;
+                    return;
+                }
+                
+                const companyInfo = getCompanyInfo();
+                const bulletPoints = getBulletPoints();
+                const listTitle = document.getElementById('listTitle').value || 'PRODUCT CATALOG';
+                
+                renderPreviewSheet(products, companyInfo, listTitle, bulletPoints, 'preview-section');
                 previewSection.classList.remove('hidden');
-                document.getElementById('previewIcon').textContent = '🙈';
-                document.getElementById('previewText').textContent = 'Hide Preview';
-                generatePreview();
+                previewBtn.textContent = '🙈 Hide Preview';
+                previewSection.scrollIntoView({ behavior: 'smooth' });
             } else {
                 previewSection.classList.add('hidden');
-                document.getElementById('previewIcon').textContent = '👁️';
-                document.getElementById('previewText').textContent = 'Show Preview';
+                previewBtn.textContent = '👁️ Show Preview';
             }
-        }
-
-        // Generate Preview
-        function generatePreview() {
-            const companyName = document.getElementById('companyName').value;
-            const companyPhone = document.getElementById('companyPhone').value;
-            const companyEmail = document.getElementById('companyEmail').value;
-            const companyWebsite = document.getElementById('companyWebsite').value;
-
-            const previewHTML = `
-                <div class="bg-gradient-to-r from-gray-900 to-blue-900 text-white p-8">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h1 class="text-4xl font-bold mb-2">${companyName}</h1>
-                            <p class="text-lg">Professional Product Catalog</p>
-                        </div>
-                        ${appState.companyLogo ? `<img src="${appState.companyLogo}" class="w-20 h-20 object-contain bg-white rounded-lg p-2">` : ''}
-                    </div>
-                </div>
-
-                <div class="p-8">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        ${appState.products.map(product => `
-                            <div class="preview-card">
-                                <div class="flex gap-4">
-                                    <div class="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                        ${product.image ? `<img src="${product.image}" class="w-full h-full object-cover">` : '<div class="text-gray-400">📷</div>'}
-                                    </div>
-                                    <div class="flex-1">
-                                        <h3 class="font-bold text-xl mb-2">${product.name || 'Product Name'}</h3>
-                                        <p class="text-gray-600 mb-3">${product.description || 'No description'}</p>
-                                        <div class="price-badge text-white px-4 py-2 rounded-lg inline-block">
-                                            <span class="text-xl font-bold">${product.price || 'Price'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <div class="bg-gray-900 text-white p-6">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p>📞 ${companyPhone} • ✉️ ${companyEmail}</p>
-                            <p>🌐 ${companyWebsite}</p>
-                        </div>
-                        <div class="w-20 h-20 bg-white rounded-lg p-2">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(companyWebsite)}" class="w-full h-full">
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.getElementById('previewContent').innerHTML = previewHTML;
         }
 
         // Export to PDF
         function exportToPDF() {
-            if (appState.products.length === 0) {
-                alert('Please add some products before exporting.');
+            if (products.length === 0) {
+                alert('Add some products first!');
                 return;
             }
 
-            generatePreview();
-            const printWindow = window.open('', '_blank');
-            const previewContent = document.getElementById('previewContent').innerHTML;
+            const companyInfo = getCompanyInfo();
+            const bulletPoints = getBulletPoints();
+            const listTitle = document.getElementById('listTitle').value || 'PRODUCT CATALOG';
+
+            // Create temporary container for export
+            const tempDiv = document.createElement('div');
+            tempDiv.id = 'temp-preview';
+            document.body.appendChild(tempDiv);
             
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Price List</title>
-                    <script src="https://cdn.tailwindcss.com"></script>
-                    <style>
-                        .preview-card { background: white; border: 2px solid #e5e7eb; border-radius: 0.75rem; padding: 1.5rem; }
-                        .price-badge { background: linear-gradient(135deg, #1f2937 0%, #374151 100%); }
-                        @media print { @page { margin: 0.5in; } }
-                    </style>
-                </head>
-                <body>
-                    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
-                        <button onclick="window.print()" style="background: #059669; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Print/Save PDF</button>
-                        <button onclick="window.close()" style="background: #6b7280; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; margin-left: 10px;">Close</button>
-                    </div>
-                    ${previewContent}
-                    <script>setTimeout(() => window.print(), 1000);</script>
-                </body>
-                </html>
-            `);
+            renderPreviewSheet(products, companyInfo, listTitle, bulletPoints, 'temp-preview');
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(
+                '<!DOCTYPE html>' +
+                '<html>' +
+                '<head>' +
+                    '<title>Price List - ' + companyInfo.name + '</title>' +
+                    '<style>' +
+                        'body { font-family: Arial, sans-serif; margin: 0; padding: 20px; line-height: 1.5; }' +
+                        '@media print { @page { margin: 0.5in; } .no-print { display: none; } }' +
+                        '.controls { position: fixed; top: 10px; right: 10px; z-index: 1000; }' +
+                        '.btn { background: #059669; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px; }' +
+                        '.btn-close { background: #6b7280; }' +
+                    '</style>' +
+                '</head>' +
+                '<body>' +
+                    '<div class="controls no-print">' +
+                        '<button class="btn" onclick="window.print()">🖨️ Print/Save PDF</button>' +
+                        '<button class="btn btn-close" onclick="window.close()">❌ Close</button>' +
+                    '</div>' +
+                    tempDiv.innerHTML +
+                    '<script>setTimeout(function(){ window.print(); }, 1000);</script>' +
+                '</body>' +
+                '</html>'
+            );
             printWindow.document.close();
+            
+            // Clean up
+            document.body.removeChild(tempDiv);
         }
 
-        // Event Listeners
+        // Event listeners - using addEventListener to prevent conflicts
         document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners
             document.getElementById('addProductBtn').addEventListener('click', addProduct);
+            document.getElementById('emptyAddBtn').addEventListener('click', addProduct);
             document.getElementById('previewBtn').addEventListener('click', togglePreview);
             document.getElementById('exportBtn').addEventListener('click', exportToPDF);
             
-            document.getElementById('logoUploadBtn').addEventListener('click', () => {
-                document.getElementById('logoInput').click();
-            });
-
-            document.getElementById('logoInput').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        appState.companyLogo = e.target.result;
-                        document.getElementById('logoPreview').innerHTML = `
-                            <img src="${e.target.result}" class="w-full h-full object-contain">
-                        `;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-
+            // Initialize UI
             updateUI();
+            
+            console.log('Price List Generator loaded successfully');
         });
     </script>
 </body>
