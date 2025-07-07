@@ -1201,20 +1201,53 @@
                             .price-badge {
                                 background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
                             }
+                            .print-controls {
+                                position: fixed;
+                                top: 20px;
+                                right: 20px;
+                                background: white;
+                                padding: 15px;
+                                border-radius: 10px;
+                                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                                z-index: 1000;
+                                display: flex;
+                                gap: 10px;
+                            }
+                            .print-btn {
+                                background: #059669;
+                                color: white;
+                                border: none;
+                                padding: 10px 20px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            }
+                            .print-btn:hover {
+                                background: #047857;
+                            }
+                            .close-btn {
+                                background: #6b7280;
+                                color: white;
+                                border: none;
+                                padding: 10px 20px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            }
+                            .close-btn:hover {
+                                background: #4b5563;
+                            }
+                            @media print {
+                                .print-controls { display: none !important; }
+                            }
                         </style>
                     </head>
                     <body>
+                        <div class="print-controls">
+                            <button class="print-btn" onclick="window.print()">🖨️ Print/Save as PDF</button>
+                            <button class="close-btn" onclick="window.close()">❌ Close</button>
+                        </div>
                         ${previewContent}
-                        <script>
-                            window.onload = function() {
-                                setTimeout(function() {
-                                    window.print();
-                                    window.onafterprint = function() {
-                                        window.close();
-                                    };
-                                }, 500);
-                            };
-                        </script>
                     </body>
                 </html>
             `;
