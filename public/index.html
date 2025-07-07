@@ -151,93 +151,6 @@
                 </div>
             </div>
 
-            <!-- Shopify Product Selection -->
-            <div id="productSelection" class="p-6 lg:p-8 border-b border-gray-200 hidden">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">Select Products from Shopify</h3>
-                
-                <!-- Filter Controls -->
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Filter Mode</label>
-                        <select id="filterMode" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="all">All Products</option>
-                            <option value="collection">By Collection</option>
-                            <option value="type">By Product Type</option>
-                            <option value="vendor">By Vendor</option>
-                            <option value="custom">Custom Filter</option>
-                        </select>
-                    </div>
-
-                    <div id="collectionFilter" class="hidden">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Collection</label>
-                        <select id="selectedCollection" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Select Collection</option>
-                        </select>
-                    </div>
-
-                    <div id="typeFilter" class="hidden">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Product Type</label>
-                        <select id="selectedType" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Select Type</option>
-                        </select>
-                    </div>
-
-                    <div id="vendorFilter" class="hidden">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Vendor</label>
-                        <select id="selectedVendor" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Select Vendor</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Search Products</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
-                            <input id="productSearch" type="text" placeholder="Search by name, type, vendor..." class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Custom Filters -->
-                <div id="customFilters" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Price Range</label>
-                        <div class="flex gap-2">
-                            <input id="priceMin" type="number" placeholder="Min" class="flex-1 p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <input id="priceMax" type="number" placeholder="Max" class="flex-1 p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Selection Controls -->
-                <div class="flex flex-wrap gap-4 mb-6">
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm font-semibold text-gray-700">
-                            <span id="selectedCount">0</span> selected
-                        </span>
-                        <button id="addSelectedBtn" class="hidden flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
-                            ➕ Add to Price List
-                        </button>
-                    </div>
-                    
-                    <button id="selectAllBtn" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors text-sm">
-                        Select All Filtered (<span id="filteredCount">0</span>)
-                    </button>
-                    
-                    <button id="clearSelectionBtn" class="px-3 py-1 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors text-sm">
-                        Clear Selection
-                    </button>
-                </div>
-
-                <!-- Product Grid -->
-                <div id="shopifyProductGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-                    <div class="col-span-full text-center py-8 text-gray-500">
-                        <div class="text-6xl mb-4">📦</div>
-                        <p>Connect to Shopify to browse your products</p>
-                    </div>
-                </div>
-            </div>
-
             <!-- Company Information Section -->
             <div class="p-6 lg:p-8">
                 <h3 class="text-lg font-bold text-gray-900 mb-4">Company Information</h3>
@@ -336,15 +249,6 @@
                                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
                                 <input id="priceListSearch" type="text" placeholder="Search price list products..." class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                             </div>
-                            
-                            <div class="flex gap-2">
-                                <button id="viewModeGrid" class="p-3 rounded-lg transition-colors bg-blue-600 text-white">
-                                    ⊞
-                                </button>
-                                <button id="viewModeList" class="p-3 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300">
-                                    ☰
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -429,7 +333,7 @@
             companyLogo: null
         };
 
-        // DOM Elements
+        // DOM Elements Cache
         const elements = {
             shopifyPanelBtn: document.getElementById('shopifyPanelBtn'),
             shopifyPanel: document.getElementById('shopifyPanel'),
@@ -442,18 +346,6 @@
             refreshBtn: document.getElementById('refreshBtn'),
             disconnectBtn: document.getElementById('disconnectBtn'),
             connectionStatus: document.getElementById('connectionStatus'),
-            productSelection: document.getElementById('productSelection'),
-            filterMode: document.getElementById('filterMode'),
-            collectionFilter: document.getElementById('collectionFilter'),
-            typeFilter: document.getElementById('typeFilter'),
-            vendorFilter: document.getElementById('vendorFilter'),
-            customFilters: document.getElementById('customFilters'),
-            productSearch: document.getElementById('productSearch'),
-            shopifyProductGrid: document.getElementById('shopifyProductGrid'),
-            selectedCount: document.getElementById('selectedCount'),
-            addSelectedBtn: document.getElementById('addSelectedBtn'),
-            selectAllBtn: document.getElementById('selectAllBtn'),
-            clearSelectionBtn: document.getElementById('clearSelectionBtn'),
             priceListProducts: document.getElementById('priceListProducts'),
             priceListProductCount: document.getElementById('priceListProductCount'),
             emptyState: document.getElementById('emptyState'),
@@ -465,277 +357,46 @@
             previewBtn: document.getElementById('previewBtn'),
             previewSection: document.getElementById('previewSection'),
             loadingModal: document.getElementById('loadingModal'),
-            loadingText: document.getElementById('loadingText')
-        };
-
-        // Shopify API Integration
-        const shopifyAPI = {
-            async fetchProducts(store, token, limit = 250) {
-                const url = `https://${store}.myshopify.com/admin/api/2024-01/products.json?limit=${limit}`;
-                const response = await fetch(url, {
-                    headers: {
-                        'X-Shopify-Access-Token': token,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.text();
-                    throw new Error(`Failed to fetch products: ${response.status} ${response.statusText}. ${errorData}`);
-                }
-
-                const data = await response.json();
-                return data.products || [];
-            },
-
-            async fetchCollections(store, token) {
-                const url = `https://${store}.myshopify.com/admin/api/2024-01/collections.json`;
-                const response = await fetch(url, {
-                    headers: {
-                        'X-Shopify-Access-Token': token,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.text();
-                    throw new Error(`Failed to fetch collections: ${response.status} ${response.statusText}. ${errorData}`);
-                }
-
-                const data = await response.json();
-                return data.collections || [];
-            },
-
-            async testConnection(store, token) {
-                const url = `https://${store}.myshopify.com/admin/api/2024-01/shop.json`;
-                const response = await fetch(url, {
-                    headers: {
-                        'X-Shopify-Access-Token': token,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.text();
-                    throw new Error(`Connection failed: ${response.status} ${response.statusText}. ${errorData}`);
-                }
-
-                return await response.json();
-            }
+            loadingText: document.getElementById('loadingText'),
+            addManualBtn: document.getElementById('addManualBtn'),
+            emptyManualBtn: document.getElementById('emptyManualBtn'),
+            emptyConnectBtn: document.getElementById('emptyConnectBtn'),
+            exportBtn: document.getElementById('exportBtn'),
+            priceListSearch: document.getElementById('priceListSearch')
         };
 
         // Utility Functions
         function showLoading(text = 'Loading...') {
-            elements.loadingText.textContent = text;
-            elements.loadingModal.classList.remove('hidden');
-            elements.loadingModal.classList.add('flex');
+            if (elements.loadingText) elements.loadingText.textContent = text;
+            if (elements.loadingModal) {
+                elements.loadingModal.classList.remove('hidden');
+                elements.loadingModal.classList.add('flex');
+            }
         }
 
         function hideLoading() {
-            elements.loadingModal.classList.add('hidden');
-            elements.loadingModal.classList.remove('flex');
+            if (elements.loadingModal) {
+                elements.loadingModal.classList.add('hidden');
+                elements.loadingModal.classList.remove('flex');
+            }
         }
 
         function updateConnectionStatus(connected, store = '') {
+            if (!elements.connectionStatus) return;
+            
             if (connected) {
                 elements.connectionStatus.innerHTML = `
                     <span>✅</span>
                     <span class="font-medium">Connected to ${store}</span>
                 `;
                 elements.connectionStatus.className = 'flex items-center gap-2 px-4 py-2 shopify-connected text-white rounded-lg';
-                elements.productSelection.classList.remove('hidden');
             } else {
                 elements.connectionStatus.innerHTML = `
                     <span>❌</span>
                     <span class="font-medium">Not Connected</span>
                 `;
                 elements.connectionStatus.className = 'flex items-center gap-2 px-4 py-2 shopify-disconnected text-white rounded-lg';
-                elements.productSelection.classList.add('hidden');
             }
-        }
-
-        function updateStats(products, collections, types, vendors) {
-            document.getElementById('productCount').textContent = products.length;
-            document.getElementById('collectionCount').textContent = collections.length;
-            document.getElementById('statsProducts').textContent = products.length;
-            document.getElementById('statsCollections').textContent = collections.length;
-            document.getElementById('statsTypes').textContent = types.length;
-            document.getElementById('statsVendors').textContent = vendors.length;
-        }
-
-        function populateFilters(collections, types, vendors) {
-            // Collections
-            const collectionSelect = document.getElementById('selectedCollection');
-            collectionSelect.innerHTML = '<option value="">Select Collection</option>';
-            collections.forEach(collection => {
-                const option = document.createElement('option');
-                option.value = collection.id;
-                option.textContent = collection.title;
-                collectionSelect.appendChild(option);
-            });
-
-            // Product Types
-            const typeSelect = document.getElementById('selectedType');
-            typeSelect.innerHTML = '<option value="">Select Type</option>';
-            types.forEach(type => {
-                const option = document.createElement('option');
-                option.value = type;
-                option.textContent = type;
-                typeSelect.appendChild(option);
-            });
-
-            // Vendors
-            const vendorSelect = document.getElementById('selectedVendor');
-            vendorSelect.innerHTML = '<option value="">Select Vendor</option>';
-            vendors.forEach(vendor => {
-                const option = document.createElement('option');
-                option.value = vendor;
-                option.textContent = vendor;
-                vendorSelect.appendChild(option);
-            });
-        }
-
-        function createShopifyProductCard(product) {
-            const isSelected = state.selectedProducts.includes(product.id.toString());
-            const price = parseFloat(product.variants[0]?.price || 0);
-            const formattedPrice = `R ${price.toFixed(2)}`;
-
-            return `
-                <div class="p-4 border-2 rounded-lg cursor-pointer transition-all ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}" 
-                     onclick="toggleProductSelection(${product.id})">
-                    <div class="flex items-start gap-3">
-                        <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-                            ${product.images && product.images[0] ? `
-                                <img src="${product.images[0].src}" alt="${product.title}" class="w-full h-full object-cover">
-                            ` : `
-                                <span class="text-gray-400">📦</span>
-                            `}
-                        </div>
-                        
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-semibold text-gray-900 truncate">${product.title}</h4>
-                            <p class="text-sm text-gray-600">${product.product_type || 'No type'}</p>
-                            <p class="text-sm text-gray-500">${product.vendor || 'No vendor'}</p>
-                            <div class="flex items-center justify-between mt-2">
-                                <span class="font-bold text-green-600">${formattedPrice}</span>
-                                <span class="text-xs text-gray-500">${product.variants.length} variant${product.variants.length !== 1 ? 's' : ''}</span>
-                            </div>
-                        </div>
-                        
-                        ${isSelected ? `
-                            <div class="flex-shrink-0">
-                                <div class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center">✓</div>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderShopifyProducts(products) {
-            if (!products || products.length === 0) {
-                elements.shopifyProductGrid.innerHTML = `
-                    <div class="col-span-full text-center py-8 text-gray-500">
-                        <div class="text-6xl mb-4">📭</div>
-                        <p>No products found</p>
-                        <p class="text-sm text-gray-400">Try adjusting your search or collection filter</p>
-                    </div>
-                `;
-                return;
-            }
-
-            elements.shopifyProductGrid.innerHTML = products.map(createShopifyProductCard).join('');
-            updateSelectionUI();
-        }
-
-        function updateSelectionUI() {
-            elements.selectedCount.textContent = state.selectedProducts.length;
-            
-            if (state.selectedProducts.length > 0) {
-                elements.addSelectedBtn.classList.remove('hidden');
-            } else {
-                elements.addSelectedBtn.classList.add('hidden');
-            }
-        }
-
-        function getFilteredProducts() {
-            let filtered = [...state.shopifyProducts];
-
-            // Apply search
-            const searchQuery = elements.productSearch.value.toLowerCase();
-            if (searchQuery) {
-                filtered = filtered.filter(product =>
-                    product.title.toLowerCase().includes(searchQuery) ||
-                    product.product_type?.toLowerCase().includes(searchQuery) ||
-                    product.vendor?.toLowerCase().includes(searchQuery)
-                );
-            }
-
-            // Apply filter mode
-            const filterMode = elements.filterMode.value;
-            switch (filterMode) {
-                case 'collection':
-                    const selectedCollection = document.getElementById('selectedCollection').value;
-                    if (selectedCollection) {
-                        filtered = filtered.filter(product => 
-                            product.collection_ids?.includes(parseInt(selectedCollection))
-                        );
-                    }
-                    break;
-                case 'type':
-                    const selectedType = document.getElementById('selectedType').value;
-                    if (selectedType) {
-                        filtered = filtered.filter(product => product.product_type === selectedType);
-                    }
-                    break;
-                case 'vendor':
-                    const selectedVendor = document.getElementById('selectedVendor').value;
-                    if (selectedVendor) {
-                        filtered = filtered.filter(product => product.vendor === selectedVendor);
-                    }
-                    break;
-                case 'custom':
-                    const minPrice = parseFloat(document.getElementById('priceMin').value || 0);
-                    const maxPrice = parseFloat(document.getElementById('priceMax').value || Infinity);
-                    filtered = filtered.filter(product => {
-                        const price = parseFloat(product.variants[0]?.price || 0);
-                        return price >= minPrice && price <= maxPrice;
-                    });
-                    break;
-            }
-
-            return filtered;
-        }
-
-        function convertShopifyProduct(shopifyProduct, variantIndex = 0) {
-            const variant = shopifyProduct.variants[variantIndex] || shopifyProduct.variants[0];
-            
-            return {
-                id: `shopify_${shopifyProduct.id}_${variant.id}`,
-                model: `${shopifyProduct.title}${shopifyProduct.variants.length > 1 ? ` - ${variant.title}` : ''}`,
-                image: shopifyProduct.images[0]?.src || null,
-                specs: {
-                    sku: variant.sku || '',
-                    type: shopifyProduct.product_type || '',
-                    vendor: shopifyProduct.vendor || '',
-                    stock: variant.inventory_quantity || 0,
-                    weight: variant.weight ? `${variant.weight} ${variant.weight_unit}` : '',
-                    description: shopifyProduct.body_html ? shopifyProduct.body_html.replace(/<[^>]*>/g, '').substring(0, 100) : ''
-                },
-                price: `R ${parseFloat(variant.price || 0).toFixed(2)}`,
-                comparePrice: variant.compare_at_price ? `R ${parseFloat(variant.compare_at_price).toFixed(2)}` : '',
-                incVat: 'INCL VAT',
-                productUrl: `https://${state.shopifyStore}.myshopify.com/products/${shopifyProduct.handle}`,
-                shopifyData: {
-                    productId: shopifyProduct.id,
-                    variantId: variant.id,
-                    handle: shopifyProduct.handle,
-                    status: shopifyProduct.status
-                }
-            };
         }
 
         function createPriceListProductCard(product, index) {
@@ -759,46 +420,46 @@
                                     <span class="text-gray-400 text-sm">No image</span>
                                 `}
                             </div>
-                            ${!product.shopifyData ? `
-                                <input type="file" accept="image/*" onchange="updateProductImage('${product.id}', this)" class="w-full text-xs mt-2">
-                            ` : ''}
+                            <input type="file" accept="image/*" onchange="updateProductImage('${product.id}', this)" class="w-full text-xs mt-2">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Model/Name</label>
-                            <input type="text" value="${product.model}" onchange="updateProduct('${product.id}', 'model', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter model name">
+                            <input type="text" value="${product.model || ''}" onchange="updateProduct('${product.id}', 'model', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter model name">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Price</label>
-                            <input type="text" value="${product.price}" onchange="updateProduct('${product.id}', 'price', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="R 1,000.00">
+                            <input type="text" value="${product.price || ''}" onchange="updateProduct('${product.id}', 'price', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="R 1,000.00">
                         </div>
                     </div>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Product URL</label>
-                            <input type="url" value="${product.productUrl || ''}" onchange="updateProduct('${product.id}', 'productUrl', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://example.com/product" ${product.shopifyData ? 'readonly' : ''}>
+                            <input type="url" value="${product.productUrl || ''}" onchange="updateProduct('${product.id}', 'productUrl', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://example.com/product">
                         </div>
                         
-                        ${Object.entries(product.specs).map(([key, value]) => `
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</label>
-                                <input type="text" value="${value || ''}" onchange="updateProductSpec('${product.id}', '${key}', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter ${key.toLowerCase()}" ${product.shopifyData && key !== 'description' ? 'readonly' : ''}>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    ${product.shopifyData ? `
-                        <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                            <div class="flex items-center gap-2 text-green-800">
-                                <span>🛍️</span>
-                                <span class="text-sm font-medium">Imported from Shopify</span>
-                            </div>
-                            <p class="text-xs text-green-600 mt-1">Product ID: ${product.shopifyData.productId} • Variant ID: ${product.shopifyData.variantId}</p>
-                            <p class="text-xs text-green-600">Status: ${product.shopifyData.status} • Handle: ${product.shopifyData.handle}</p>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">SKU</label>
+                            <input type="text" value="${product.specs?.sku || ''}" onchange="updateProductSpec('${product.id}', 'sku', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter SKU">
                         </div>
-                    ` : ''}
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Type</label>
+                            <input type="text" value="${product.specs?.type || ''}" onchange="updateProductSpec('${product.id}', 'type', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter type">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Vendor</label>
+                            <input type="text" value="${product.specs?.vendor || ''}" onchange="updateProductSpec('${product.id}', 'vendor', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter vendor">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                            <input type="text" value="${product.specs?.description || ''}" onchange="updateProductSpec('${product.id}', 'description', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter description">
+                        </div>
+                    </div>
                 </div>
             `;
         }
@@ -809,127 +470,37 @@
 
             if (searchQuery) {
                 filteredProducts = state.products.filter(product =>
-                    product.model.toLowerCase().includes(searchQuery) ||
-                    Object.values(product.specs).some(spec =>
+                    (product.model || '').toLowerCase().includes(searchQuery) ||
+                    Object.values(product.specs || {}).some(spec =>
                         spec.toString().toLowerCase().includes(searchQuery)
                     )
                 );
             }
 
-            elements.priceListProductCount.textContent = filteredProducts.length;
+            if (elements.priceListProductCount) {
+                elements.priceListProductCount.textContent = filteredProducts.length;
+            }
 
             if (filteredProducts.length > 0) {
-                elements.priceListProducts.innerHTML = filteredProducts.map(createPriceListProductCard).join('');
-                elements.emptyState.style.display = 'none';
-                elements.exportSection.classList.remove('hidden');
+                if (elements.priceListProducts) {
+                    elements.priceListProducts.innerHTML = filteredProducts.map(createPriceListProductCard).join('');
+                }
+                if (elements.emptyState) elements.emptyState.style.display = 'none';
+                if (elements.exportSection) elements.exportSection.classList.remove('hidden');
             } else if (state.products.length > 0) {
-                elements.priceListProducts.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500"><p>No products match your search</p></div>';
-                elements.emptyState.style.display = 'none';
-                elements.exportSection.classList.remove('hidden');
+                if (elements.priceListProducts) {
+                    elements.priceListProducts.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500"><p>No products match your search</p></div>';
+                }
+                if (elements.emptyState) elements.emptyState.style.display = 'none';
+                if (elements.exportSection) elements.exportSection.classList.remove('hidden');
             } else {
-                elements.priceListProducts.innerHTML = '';
-                elements.emptyState.style.display = 'block';
-                elements.exportSection.classList.add('hidden');
+                if (elements.priceListProducts) elements.priceListProducts.innerHTML = '';
+                if (elements.emptyState) elements.emptyState.style.display = 'block';
+                if (elements.exportSection) elements.exportSection.classList.add('hidden');
             }
         }
 
         // Event Handlers
-        async function connectToShopify() {
-            const store = elements.storeName.value.trim().replace(/\.myshopify\.com.*/, '');
-            const token = elements.accessToken.value.trim();
-
-            if (!store || !token) {
-                alert('Please enter both store name and access token');
-                return;
-            }
-
-            elements.connectBtn.disabled = true;
-            document.getElementById('connectIcon').textContent = '🔄';
-            document.getElementById('connectText').textContent = 'Connecting...';
-
-            try {
-                console.log(`Testing connection to ${store}.myshopify.com...`);
-                await shopifyAPI.testConnection(store, token);
-
-                console.log('Connection successful, fetching data...');
-                const [products, collections] = await Promise.all([
-                    shopifyAPI.fetchProducts(store, token),
-                    shopifyAPI.fetchCollections(store, token)
-                ]);
-
-                console.log(`Fetched ${products.length} products and ${collections.length} collections`);
-
-                // Update state
-                state.shopifyConnected = true;
-                state.shopifyStore = store;
-                state.shopifyToken = token;
-                state.shopifyProducts = products;
-                state.shopifyCollections = collections;
-
-                // Extract unique types and vendors
-                state.productTypes = [...new Set(products.map(p => p.product_type).filter(Boolean))];
-                state.vendors = [...new Set(products.map(p => p.vendor).filter(Boolean))];
-
-                // Update UI
-                updateConnectionStatus(true, store);
-                updateStats(products, collections, state.productTypes, state.vendors);
-                populateFilters(collections, state.productTypes, state.vendors);
-                renderShopifyProducts(products);
-
-                // Switch to connected state
-                elements.connectionForm.classList.add('hidden');
-                elements.connectedState.classList.remove('hidden');
-                document.getElementById('connectedStore').textContent = `${store}.myshopify.com`;
-
-                // Update company info if default
-                if (elements.companyName.value === 'Your Company Name') {
-                    elements.companyName.value = store.charAt(0).toUpperCase() + store.slice(1).replace(/-/g, ' ');
-                }
-
-                alert(`Successfully connected to ${store}! Found ${products.length} products and ${collections.length} collections.`);
-
-            } catch (error) {
-                console.error('Shopify connection error:', error);
-                alert(`Failed to connect to Shopify: ${error.message}\n\nPlease check:\n• Store name is correct\n• Access token is valid\n• Token has required permissions`);
-            } finally {
-                elements.connectBtn.disabled = false;
-                document.getElementById('connectIcon').textContent = '🛍️';
-                document.getElementById('connectText').textContent = 'Connect to Shopify';
-            }
-        }
-
-        function toggleProductSelection(productId) {
-            const id = productId.toString();
-            if (state.selectedProducts.includes(id)) {
-                state.selectedProducts = state.selectedProducts.filter(p => p !== id);
-            } else {
-                state.selectedProducts.push(id);
-            }
-            
-            updateSelectionUI();
-            renderShopifyProducts(getFilteredProducts());
-        }
-
-        function addSelectedProducts() {
-            const newProducts = [];
-
-            state.selectedProducts.forEach(productId => {
-                const shopifyProduct = state.shopifyProducts.find(p => p.id.toString() === productId);
-                if (shopifyProduct) {
-                    shopifyProduct.variants.forEach((variant, index) => {
-                        newProducts.push(convertShopifyProduct(shopifyProduct, index));
-                    });
-                }
-            });
-
-            state.products = [...state.products, ...newProducts];
-            state.selectedProducts = [];
-            
-            updateSelectionUI();
-            renderPriceListProducts();
-            alert(`Added ${newProducts.length} product(s) to your price list!`);
-        }
-
         function addManualProduct() {
             const newProduct = {
                 id: Date.now(),
@@ -948,6 +519,7 @@
 
             state.products.push(newProduct);
             renderPriceListProducts();
+            console.log('Added manual product:', newProduct);
         }
 
         function updateProduct(id, field, value) {
@@ -956,6 +528,7 @@
                     ? { ...product, [field]: value }
                     : product
             );
+            console.log('Updated product:', id, field, value);
         }
 
         function updateProductSpec(id, spec, value) {
@@ -964,6 +537,7 @@
                     ? { ...product, specs: { ...product.specs, [spec]: value } }
                     : product
             );
+            console.log('Updated product spec:', id, spec, value);
         }
 
         function updateProductImage(id, input) {
@@ -982,6 +556,7 @@
             if (confirm('Are you sure you want to remove this product?')) {
                 state.products = state.products.filter(product => product.id.toString() !== id.toString());
                 renderPriceListProducts();
+                console.log('Removed product:', id);
             }
         }
 
@@ -991,45 +566,46 @@
                 const newProduct = {
                     ...productToDuplicate,
                     id: Date.now(),
-                    model: productToDuplicate.model + ' (Copy)'
+                    model: (productToDuplicate.model || '') + ' (Copy)',
+                    specs: { ...productToDuplicate.specs }
                 };
                 state.products.push(newProduct);
                 renderPriceListProducts();
+                console.log('Duplicated product:', newProduct);
             }
         }
 
         function togglePreview() {
             state.showPreview = !state.showPreview;
-            const previewSection = elements.previewSection;
             
             if (state.showPreview) {
-                previewSection.classList.remove('hidden');
-                document.getElementById('previewIcon').textContent = '🙈';
-                document.getElementById('previewText').textContent = 'Hide Preview';
+                if (elements.previewSection) elements.previewSection.classList.remove('hidden');
+                if (document.getElementById('previewIcon')) document.getElementById('previewIcon').textContent = '🙈';
+                if (document.getElementById('previewText')) document.getElementById('previewText').textContent = 'Hide Preview';
                 generatePreview();
             } else {
-                previewSection.classList.add('hidden');
-                document.getElementById('previewIcon').textContent = '👁️';
-                document.getElementById('previewText').textContent = 'Show Preview';
+                if (elements.previewSection) elements.previewSection.classList.add('hidden');
+                if (document.getElementById('previewIcon')) document.getElementById('previewIcon').textContent = '👁️';
+                if (document.getElementById('previewText')) document.getElementById('previewText').textContent = 'Show Preview';
             }
         }
 
         function generatePreview() {
             const companyInfo = {
-                name: elements.companyName.value,
-                phone: document.getElementById('companyPhone').value,
-                email: document.getElementById('companyEmail').value,
-                website: document.getElementById('companyWebsite').value,
-                tagline: document.getElementById('companyTagline').value,
-                terms: document.getElementById('companyTerms').value,
+                name: elements.companyName?.value || 'Your Company Name',
+                phone: document.getElementById('companyPhone')?.value || '+1 234-567-8900',
+                email: document.getElementById('companyEmail')?.value || 'sales@yourcompany.com',
+                website: document.getElementById('companyWebsite')?.value || 'https://yourcompany.com',
+                tagline: document.getElementById('companyTagline')?.value || 'Your Company Tagline',
+                terms: document.getElementById('companyTerms')?.value || 'Payment terms: Net 30. Terms & Conditions Apply.',
                 logo: state.companyLogo
             };
 
-            const listTitle = document.getElementById('listTitle').value;
+            const listTitle = document.getElementById('listTitle')?.value || 'PRODUCT CATALOG';
             const bulletPoints = {
-                point1: document.getElementById('bulletPoint1').value,
-                point2: document.getElementById('bulletPoint2').value,
-                point3: document.getElementById('bulletPoint3').value
+                point1: document.getElementById('bulletPoint1')?.value || 'Professional Grade',
+                point2: document.getElementById('bulletPoint2')?.value || 'Quality Assured',
+                point3: document.getElementById('bulletPoint3')?.value || 'Fast Delivery'
             };
 
             const previewHTML = `
@@ -1084,7 +660,7 @@
                                         <h3 class="font-bold text-xl text-gray-900 mb-4">${product.model || 'Product Model'}</h3>
                                         
                                         <div class="space-y-2 text-sm">
-                                            ${Object.entries(product.specs).map(([key, value]) => {
+                                            ${Object.entries(product.specs || {}).map(([key, value]) => {
                                                 if (!value) return '';
                                                 const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
                                                 return `
@@ -1102,7 +678,7 @@
                                             <div class="price-badge text-white px-6 py-3 rounded-xl shadow-lg">
                                                 <div class="text-2xl font-bold">${product.price || 'R 0.00'}</div>
                                                 ${product.comparePrice ? `<div class="text-xs text-red-400 line-through">${product.comparePrice}</div>` : ''}
-                                                <div class="text-xs text-red-400 font-bold mt-1">${product.incVat}</div>
+                                                <div class="text-xs text-red-400 font-bold mt-1">${product.incVat || 'INCL VAT'}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -1139,7 +715,10 @@
                 </div>
             `;
 
-            document.getElementById('previewContent').innerHTML = previewHTML;
+            const previewContent = document.getElementById('previewContent');
+            if (previewContent) {
+                previewContent.innerHTML = previewHTML;
+            }
         }
 
         function exportToPDF() {
@@ -1148,22 +727,22 @@
                 return;
             }
 
-            // Generate preview content first
+            // Generate the same content as preview
             const companyInfo = {
-                name: elements.companyName.value,
-                phone: document.getElementById('companyPhone').value,
-                email: document.getElementById('companyEmail').value,
-                website: document.getElementById('companyWebsite').value,
-                tagline: document.getElementById('companyTagline').value,
-                terms: document.getElementById('companyTerms').value,
+                name: elements.companyName?.value || 'Your Company Name',
+                phone: document.getElementById('companyPhone')?.value || '+1 234-567-8900',
+                email: document.getElementById('companyEmail')?.value || 'sales@yourcompany.com',
+                website: document.getElementById('companyWebsite')?.value || 'https://yourcompany.com',
+                tagline: document.getElementById('companyTagline')?.value || 'Your Company Tagline',
+                terms: document.getElementById('companyTerms')?.value || 'Payment terms: Net 30. Terms & Conditions Apply.',
                 logo: state.companyLogo
             };
 
-            const listTitle = document.getElementById('listTitle').value;
+            const listTitle = document.getElementById('listTitle')?.value || 'PRODUCT CATALOG';
             const bulletPoints = {
-                point1: document.getElementById('bulletPoint1').value,
-                point2: document.getElementById('bulletPoint2').value,
-                point3: document.getElementById('bulletPoint3').value
+                point1: document.getElementById('bulletPoint1')?.value || 'Professional Grade',
+                point2: document.getElementById('bulletPoint2')?.value || 'Quality Assured',
+                point3: document.getElementById('bulletPoint3')?.value || 'Fast Delivery'
             };
 
             const previewContent = `
@@ -1218,7 +797,7 @@
                                         <h3 class="font-bold text-xl text-gray-900 mb-4">${product.model || 'Product Model'}</h3>
                                         
                                         <div class="space-y-2 text-sm">
-                                            ${Object.entries(product.specs).map(([key, value]) => {
+                                            ${Object.entries(product.specs || {}).map(([key, value]) => {
                                                 if (!value) return '';
                                                 const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
                                                 return `
@@ -1236,7 +815,7 @@
                                             <div class="price-badge text-white px-6 py-3 rounded-xl shadow-lg">
                                                 <div class="text-2xl font-bold">${product.price || 'R 0.00'}</div>
                                                 ${product.comparePrice ? `<div class="text-xs text-red-400 line-through">${product.comparePrice}</div>` : ''}
-                                                <div class="text-xs text-red-400 font-bold mt-1">${product.incVat}</div>
+                                                <div class="text-xs text-red-400 font-bold mt-1">${product.incVat || 'INCL VAT'}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -1362,6 +941,7 @@
             try {
                 printWindow.document.write(printDocument);
                 printWindow.document.close();
+                console.log('Export window created successfully');
             } catch (error) {
                 console.error('Error creating print window:', error);
                 alert('Error creating print window. Please try again.');
@@ -1369,8 +949,7 @@
             }
         }
 
-        // Global functions for onclick handlers
-        window.toggleProductSelection = toggleProductSelection;
+        // Make functions globally available for HTML onclick handlers
         window.updateProduct = updateProduct;
         window.updateProductSpec = updateProductSpec;
         window.updateProductImage = updateProductImage;
@@ -1379,202 +958,77 @@
 
         // Event Listeners
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Shopify Price List Generator initialized');
+
             // Shopify Panel
-            elements.shopifyPanelBtn?.addEventListener('click', () => {
-                elements.shopifyPanel.classList.toggle('hidden');
-            });
-
-            elements.connectBtn?.addEventListener('click', connectToShopify);
-
-            elements.cancelBtn?.addEventListener('click', () => {
-                elements.shopifyPanel.classList.add('hidden');
-            });
-
-            elements.disconnectBtn?.addEventListener('click', () => {
-                if (confirm('Are you sure you want to disconnect from Shopify?')) {
-                    state.shopifyConnected = false;
-                    state.shopifyProducts = [];
-                    state.shopifyCollections = [];
-                    state.productTypes = [];
-                    state.vendors = [];
-                    state.selectedProducts = [];
-                    
-                    updateConnectionStatus(false);
-                    elements.connectionForm.classList.remove('hidden');
-                    elements.connectedState.classList.add('hidden');
-                    elements.storeName.value = '';
-                    elements.accessToken.value = '';
-                }
-            });
-
-            elements.refreshBtn?.addEventListener('click', async () => {
-                if (!state.shopifyConnected) return;
-
-                const refreshIcon = document.getElementById('refreshIcon');
-                if (refreshIcon) refreshIcon.textContent = '🔄';
-                
-                try {
-                    const [products, collections] = await Promise.all([
-                        shopifyAPI.fetchProducts(state.shopifyStore, state.shopifyToken),
-                        shopifyAPI.fetchCollections(state.shopifyStore, state.shopifyToken)
-                    ]);
-
-                    state.shopifyProducts = products;
-                    state.shopifyCollections = collections;
-                    state.productTypes = [...new Set(products.map(p => p.product_type).filter(Boolean))];
-                    state.vendors = [...new Set(products.map(p => p.vendor).filter(Boolean))];
-
-                    updateStats(products, collections, state.productTypes, state.vendors);
-                    populateFilters(collections, state.productTypes, state.vendors);
-                    renderShopifyProducts(getFilteredProducts());
-
-                    alert('Shopify data refreshed successfully!');
-                } catch (error) {
-                    console.error('Error refreshing Shopify data:', error);
-                    alert(`Error refreshing data: ${error.message}`);
-                } finally {
-                    if (refreshIcon) refreshIcon.textContent = '🔄';
-                }
-            });
-
-            // Filter controls
-            elements.filterMode?.addEventListener('change', (e) => {
-                const mode = e.target.value;
-                
-                // Hide all filter options
-                elements.collectionFilter?.classList.add('hidden');
-                elements.typeFilter?.classList.add('hidden');
-                elements.vendorFilter?.classList.add('hidden');
-                elements.customFilters?.classList.add('hidden');
-                
-                // Show relevant filter
-                switch (mode) {
-                    case 'collection':
-                        elements.collectionFilter?.classList.remove('hidden');
-                        break;
-                    case 'type':
-                        elements.typeFilter?.classList.remove('hidden');
-                        break;
-                    case 'vendor':
-                        elements.vendorFilter?.classList.remove('hidden');
-                        break;
-                    case 'custom':
-                        elements.customFilters?.classList.remove('hidden');
-                        break;
-                }
-                
-                renderShopifyProducts(getFilteredProducts());
-                updateFilteredCount();
-            });
-
-            elements.productSearch?.addEventListener('input', () => {
-                renderShopifyProducts(getFilteredProducts());
-                updateFilteredCount();
-            });
-
-            // Selection controls
-            elements.selectAllBtn?.addEventListener('click', () => {
-                const filteredProducts = getFilteredProducts();
-                state.selectedProducts = filteredProducts.map(p => p.id.toString());
-                updateSelectionUI();
-                renderShopifyProducts(filteredProducts);
-            });
-
-            elements.clearSelectionBtn?.addEventListener('click', () => {
-                state.selectedProducts = [];
-                updateSelectionUI();
-                renderShopifyProducts(getFilteredProducts());
-            });
-
-            elements.addSelectedBtn?.addEventListener('click', addSelectedProducts);
+            if (elements.shopifyPanelBtn) {
+                elements.shopifyPanelBtn.addEventListener('click', () => {
+                    if (elements.shopifyPanel) {
+                        elements.shopifyPanel.classList.toggle('hidden');
+                    }
+                });
+            }
 
             // Manual product buttons
-            elements.addManualBtn?.addEventListener('click', addManualProduct);
-            document.getElementById('emptyConnectBtn')?.addEventListener('click', () => {
-                elements.shopifyPanel.classList.remove('hidden');
-            });
-            document.getElementById('emptyManualBtn')?.addEventListener('click', addManualProduct);
+            if (elements.addManualBtn) {
+                elements.addManualBtn.addEventListener('click', addManualProduct);
+            }
+            
+            if (elements.emptyManualBtn) {
+                elements.emptyManualBtn.addEventListener('click', addManualProduct);
+            }
+            
+            if (elements.emptyConnectBtn) {
+                elements.emptyConnectBtn.addEventListener('click', () => {
+                    if (elements.shopifyPanel) {
+                        elements.shopifyPanel.classList.remove('hidden');
+                    }
+                });
+            }
 
             // Logo upload
-            elements.logoUploadBtn?.addEventListener('click', () => {
-                elements.logoInput.click();
-            });
+            if (elements.logoUploadBtn) {
+                elements.logoUploadBtn.addEventListener('click', () => {
+                    if (elements.logoInput) {
+                        elements.logoInput.click();
+                    }
+                });
+            }
 
-            elements.logoInput?.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        state.companyLogo = e.target.result;
-                        elements.logoPreview.innerHTML = `
-                            <img src="${e.target.result}" alt="Company logo" class="w-full h-full object-contain">
-                        `;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
+            if (elements.logoInput) {
+                elements.logoInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            state.companyLogo = e.target.result;
+                            if (elements.logoPreview) {
+                                elements.logoPreview.innerHTML = `
+                                    <img src="${e.target.result}" alt="Company logo" class="w-full h-full object-contain">
+                                `;
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
 
             // Preview and export
-            elements.previewBtn?.addEventListener('click', togglePreview);
-            document.getElementById('exportBtn')?.addEventListener('click', exportToPDF);
+            if (elements.previewBtn) {
+                elements.previewBtn.addEventListener('click', togglePreview);
+            }
+            
+            if (elements.exportBtn) {
+                elements.exportBtn.addEventListener('click', exportToPDF);
+            }
 
             // Search functionality
-            document.getElementById('priceListSearch')?.addEventListener('input', renderPriceListProducts);
-
-            // View mode controls
-            document.getElementById('viewModeGrid')?.addEventListener('click', () => {
-                state.viewMode = 'grid';
-                document.getElementById('viewModeGrid').className = 'p-3 rounded-lg transition-colors bg-blue-600 text-white';
-                document.getElementById('viewModeList').className = 'p-3 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
-                elements.priceListProducts.className = 'grid grid-cols-1 lg:grid-cols-2 gap-6';
-            });
-
-            document.getElementById('viewModeList')?.addEventListener('click', () => {
-                state.viewMode = 'list';
-                document.getElementById('viewModeList').className = 'p-3 rounded-lg transition-colors bg-blue-600 text-white';
-                document.getElementById('viewModeGrid').className = 'p-3 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300';
-                elements.priceListProducts.className = 'space-y-4';
-            });
-
-            // Additional filter change listeners
-            document.getElementById('selectedCollection')?.addEventListener('change', () => {
-                renderShopifyProducts(getFilteredProducts());
-                updateFilteredCount();
-            });
-
-            document.getElementById('selectedType')?.addEventListener('change', () => {
-                renderShopifyProducts(getFilteredProducts());
-                updateFilteredCount();
-            });
-
-            document.getElementById('selectedVendor')?.addEventListener('change', () => {
-                renderShopifyProducts(getFilteredProducts());
-                updateFilteredCount();
-            });
-
-            document.getElementById('priceMin')?.addEventListener('input', () => {
-                renderShopifyProducts(getFilteredProducts());
-                updateFilteredCount();
-            });
-
-            document.getElementById('priceMax')?.addEventListener('input', () => {
-                renderShopifyProducts(getFilteredProducts());
-                updateFilteredCount();
-            });
-
-            // Update filtered count function
-            function updateFilteredCount() {
-                const filteredProducts = getFilteredProducts();
-                const filteredCountElement = document.getElementById('filteredCount');
-                if (filteredCountElement) {
-                    filteredCountElement.textContent = filteredProducts.length;
-                }
+            if (elements.priceListSearch) {
+                elements.priceListSearch.addEventListener('input', renderPriceListProducts);
             }
 
             // Initialize the application
-            console.log('🚀 Shopify Price List Generator initialized');
             renderPriceListProducts();
-            updateFilteredCount();
         });
 
     </script>
