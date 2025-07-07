@@ -6,7 +6,6 @@
     <title>Shopify Price List Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles to match original */
         .gradient-header {
             background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #2563eb 100%);
         }
@@ -210,11 +209,6 @@
                     </div>
                 </div>
 
-                <!-- Quick Collection Actions -->
-                <div id="quickActions" class="flex flex-wrap gap-2 mb-6">
-                    <span class="text-sm font-semibold text-gray-700">Quick Actions:</span>
-                </div>
-
                 <!-- Selection Controls -->
                 <div class="flex flex-wrap gap-4 mb-6">
                     <div class="flex items-center gap-2">
@@ -336,7 +330,7 @@
                             </div>
                         </div>
                         
-                        <!-- Search */}
+                        <!-- Search -->
                         <div class="flex flex-col sm:flex-row gap-3">
                             <div class="relative flex-1">
                                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
@@ -437,7 +431,6 @@
 
         // DOM Elements
         const elements = {
-            // Shopify Panel
             shopifyPanelBtn: document.getElementById('shopifyPanelBtn'),
             shopifyPanel: document.getElementById('shopifyPanel'),
             connectionForm: document.getElementById('connectionForm'),
@@ -448,48 +441,34 @@
             cancelBtn: document.getElementById('cancelBtn'),
             refreshBtn: document.getElementById('refreshBtn'),
             disconnectBtn: document.getElementById('disconnectBtn'),
-            
-            // Status indicators
             connectionStatus: document.getElementById('connectionStatus'),
             productSelection: document.getElementById('productSelection'),
-            
-            // Filter controls
             filterMode: document.getElementById('filterMode'),
             collectionFilter: document.getElementById('collectionFilter'),
             typeFilter: document.getElementById('typeFilter'),
             vendorFilter: document.getElementById('vendorFilter'),
             customFilters: document.getElementById('customFilters'),
             productSearch: document.getElementById('productSearch'),
-            
-            // Product grid
             shopifyProductGrid: document.getElementById('shopifyProductGrid'),
             selectedCount: document.getElementById('selectedCount'),
             addSelectedBtn: document.getElementById('addSelectedBtn'),
             selectAllBtn: document.getElementById('selectAllBtn'),
             clearSelectionBtn: document.getElementById('clearSelectionBtn'),
-            
-            // Price list management
             priceListProducts: document.getElementById('priceListProducts'),
             priceListProductCount: document.getElementById('priceListProductCount'),
             emptyState: document.getElementById('emptyState'),
             exportSection: document.getElementById('exportSection'),
-            
-            // Company info
             companyName: document.getElementById('companyName'),
             logoInput: document.getElementById('logoInput'),
             logoUploadBtn: document.getElementById('logoUploadBtn'),
             logoPreview: document.getElementById('logoPreview'),
-            
-            // Preview
             previewBtn: document.getElementById('previewBtn'),
             previewSection: document.getElementById('previewSection'),
-            
-            // Loading
             loadingModal: document.getElementById('loadingModal'),
             loadingText: document.getElementById('loadingText')
         };
 
-        // Real Shopify API Integration
+        // Shopify API Integration
         const shopifyAPI = {
             async fetchProducts(store, token, limit = 250) {
                 const url = `https://${store}.myshopify.com/admin/api/2024-01/products.json?limit=${limit}`;
@@ -701,7 +680,6 @@
                 case 'collection':
                     const selectedCollection = document.getElementById('selectedCollection').value;
                     if (selectedCollection) {
-                        // Note: This is simplified - real implementation would need collection product mapping
                         filtered = filtered.filter(product => 
                             product.collection_ids?.includes(parseInt(selectedCollection))
                         );
@@ -800,7 +778,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Product URL</label>
-                            <input type="url" value="${product.productUrl}" onchange="updateProduct('${product.id}', 'productUrl', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://example.com/product" ${product.shopifyData ? 'readonly' : ''}>
+                            <input type="url" value="${product.productUrl || ''}" onchange="updateProduct('${product.id}', 'productUrl', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://example.com/product" ${product.shopifyData ? 'readonly' : ''}>
                         </div>
                         
                         ${Object.entries(product.specs).map(([key, value]) => `
@@ -1023,7 +1001,6 @@
         function togglePreview() {
             state.showPreview = !state.showPreview;
             const previewSection = elements.previewSection;
-            const previewBtn = elements.previewBtn;
             
             if (state.showPreview) {
                 previewSection.classList.remove('hidden');
@@ -1171,25 +1148,142 @@
                 return;
             }
 
-            // Make sure preview is generated first
-            if (!state.showPreview) {
-                generatePreview();
-            }
+            // Generate preview content first
+            const companyInfo = {
+                name: elements.companyName.value,
+                phone: document.getElementById('companyPhone').value,
+                email: document.getElementById('companyEmail').value,
+                website: document.getElementById('companyWebsite').value,
+                tagline: document.getElementById('companyTagline').value,
+                terms: document.getElementById('companyTerms').value,
+                logo: state.companyLogo
+            };
 
-            const previewContent = document.getElementById('previewContent')?.innerHTML;
-            
-            if (!previewContent || previewContent.trim() === '') {
-                alert('Error: Could not generate preview content. Please try adding products first.');
-                return;
-            }
+            const listTitle = document.getElementById('listTitle').value;
+            const bulletPoints = {
+                point1: document.getElementById('bulletPoint1').value,
+                point2: document.getElementById('bulletPoint2').value,
+                point3: document.getElementById('bulletPoint3').value
+            };
+
+            const previewContent = `
+                <div class="bg-gradient-to-r from-gray-900 to-blue-900 text-white p-8">
+                    <div class="flex flex-col lg:flex-row justify-between items-start gap-6">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-4 mb-4">
+                                ${companyInfo.logo ? `
+                                    <div class="w-16 h-16 bg-white rounded-lg p-2 flex items-center justify-center">
+                                        <img src="${companyInfo.logo}" alt="${companyInfo.name}" class="w-full h-full object-contain">
+                                    </div>
+                                ` : ''}
+                                <h1 class="text-4xl lg:text-5xl font-bold">${companyInfo.name}</h1>
+                            </div>
+                            <div class="text-sm lg:text-base space-y-2">
+                                <div>• ${companyInfo.tagline}</div>
+                                <div>• Prices are subject to change without prior notice.</div>
+                                <div>• ${companyInfo.terms}</div>
+                            </div>
+                        </div>
+
+                        <div class="w-full lg:w-auto text-center lg:text-right">
+                            <div class="bg-blue-600 px-8 py-4 rounded-xl shadow-xl">
+                                <h2 class="text-2xl lg:text-3xl font-bold">${listTitle}</h2>
+                                <div class="text-sm lg:text-base mt-2">
+                                    <div>• ${bulletPoints.point1}</div>
+                                    <div>• ${bulletPoints.point2}</div>
+                                    <div>• ${bulletPoints.point3}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6 lg:p-10">
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        ${state.products.map(product => `
+                            <div class="preview-card">
+                                <div class="flex flex-col sm:flex-row items-start gap-6">
+                                    <div class="w-full sm:w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border-2 border-gray-200 flex-shrink-0">
+                                        ${product.image ? `
+                                            <img src="${product.image}" alt="${product.model}" class="w-full h-full object-cover">
+                                        ` : `
+                                            <div class="text-gray-400 text-center">
+                                                <div class="text-3xl mb-2">📷</div>
+                                                <div>No Image</div>
+                                            </div>
+                                        `}
+                                    </div>
+                                    
+                                    <div class="flex-1 min-w-0 w-full">
+                                        <h3 class="font-bold text-xl text-gray-900 mb-4">${product.model || 'Product Model'}</h3>
+                                        
+                                        <div class="space-y-2 text-sm">
+                                            ${Object.entries(product.specs).map(([key, value]) => {
+                                                if (!value) return '';
+                                                const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                                                return `
+                                                    <div class="flex flex-wrap">
+                                                        <span class="text-gray-600 font-medium">• ${label}:</span>
+                                                        <span class="ml-2 font-semibold text-gray-800">${value}</span>
+                                                    </div>
+                                                `;
+                                            }).join('')}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="w-full sm:w-auto text-center sm:text-right flex-shrink-0">
+                                        <div class="flex flex-col items-center sm:items-end gap-3">
+                                            <div class="price-badge text-white px-6 py-3 rounded-xl shadow-lg">
+                                                <div class="text-2xl font-bold">${product.price || 'R 0.00'}</div>
+                                                ${product.comparePrice ? `<div class="text-xs text-red-400 line-through">${product.comparePrice}</div>` : ''}
+                                                <div class="text-xs text-red-400 font-bold mt-1">${product.incVat}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 text-white p-6 lg:p-8 mt-8">
+                    <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
+                        <div class="space-y-2 text-center lg:text-left">
+                            <div class="flex items-center justify-center lg:justify-start gap-3">
+                                <span class="text-xl">📞</span>
+                                <span class="text-lg">${companyInfo.phone}</span>
+                            </div>
+                            <div class="flex items-center justify-center lg:justify-start gap-3">
+                                <span class="text-xl">✉️</span>
+                                <span class="text-lg">${companyInfo.email}</span>
+                            </div>
+                            <div class="flex items-center justify-center lg:justify-start gap-3">
+                                <span class="text-xl">🌐</span>
+                                <span class="text-lg">${companyInfo.website}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <div class="text-sm mb-3">Scan to visit our website:</div>
+                            <div class="w-24 h-24 bg-white rounded-lg mx-auto flex items-center justify-center shadow-lg p-2">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(companyInfo.website)}" alt="QR Code" class="w-full h-full">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
 
             const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('Popup blocked! Please allow popups for this site and try again.');
+                return;
+            }
 
             const printDocument = `
                 <!DOCTYPE html>
                 <html>
                     <head>
-                        <title>Price List - ${elements.companyName.value}</title>
+                        <title>Price List - ${companyInfo.name}</title>
                         <meta charset="UTF-8">
                         <meta name="viewport" content="width=device-width, initial-scale=1.0">
                         <script src="https://cdn.tailwindcss.com"></script>
@@ -1199,6 +1293,7 @@
                             @media print { 
                                 @page { margin: 0.5in; size: A4; } 
                                 body { -webkit-print-color-adjust: exact; color-adjust: exact; print-color-adjust: exact; } 
+                                .print-controls { display: none !important; }
                             }
                             .preview-card {
                                 background: white;
@@ -1246,9 +1341,6 @@
                             .close-btn:hover {
                                 background: #4b5563;
                             }
-                            @media print {
-                                .print-controls { display: none !important; }
-                            }
                         </style>
                     </head>
                     <body>
@@ -1257,13 +1349,33 @@
                             <button class="close-btn" onclick="window.close()">❌ Close</button>
                         </div>
                         ${previewContent}
+                        <script>
+                            // Auto-trigger print dialog after a short delay
+                            setTimeout(() => {
+                                window.print();
+                            }, 1000);
+                        </script>
                     </body>
                 </html>
             `;
 
-            printWindow.document.write(printDocument);
-            printWindow.document.close();
+            try {
+                printWindow.document.write(printDocument);
+                printWindow.document.close();
+            } catch (error) {
+                console.error('Error creating print window:', error);
+                alert('Error creating print window. Please try again.');
+                printWindow.close();
+            }
         }
+
+        // Global functions for onclick handlers
+        window.toggleProductSelection = toggleProductSelection;
+        window.updateProduct = updateProduct;
+        window.updateProductSpec = updateProductSpec;
+        window.updateProductImage = updateProductImage;
+        window.removeProduct = removeProduct;
+        window.duplicateProduct = duplicateProduct;
 
         // Event Listeners
         document.addEventListener('DOMContentLoaded', function() {
@@ -1352,10 +1464,12 @@
                 }
                 
                 renderShopifyProducts(getFilteredProducts());
+                updateFilteredCount();
             });
 
             elements.productSearch?.addEventListener('input', () => {
                 renderShopifyProducts(getFilteredProducts());
+                updateFilteredCount();
             });
 
             // Selection controls
@@ -1425,42 +1539,41 @@
             // Additional filter change listeners
             document.getElementById('selectedCollection')?.addEventListener('change', () => {
                 renderShopifyProducts(getFilteredProducts());
+                updateFilteredCount();
             });
 
             document.getElementById('selectedType')?.addEventListener('change', () => {
                 renderShopifyProducts(getFilteredProducts());
+                updateFilteredCount();
             });
 
             document.getElementById('selectedVendor')?.addEventListener('change', () => {
                 renderShopifyProducts(getFilteredProducts());
+                updateFilteredCount();
             });
 
             document.getElementById('priceMin')?.addEventListener('input', () => {
                 renderShopifyProducts(getFilteredProducts());
+                updateFilteredCount();
             });
 
             document.getElementById('priceMax')?.addEventListener('input', () => {
                 renderShopifyProducts(getFilteredProducts());
+                updateFilteredCount();
             });
 
-            // Initialize the application
-            console.log('🚀 Shopify Price List Generator initialized');
-            renderPriceListProducts();
-
-            // Update filtered count initially
-            const updateFilteredCount = () => {
+            // Update filtered count function
+            function updateFilteredCount() {
                 const filteredProducts = getFilteredProducts();
                 const filteredCountElement = document.getElementById('filteredCount');
                 if (filteredCountElement) {
                     filteredCountElement.textContent = filteredProducts.length;
                 }
-            };
+            }
 
-            // Update filtered count when filter changes
-            elements.filterMode?.addEventListener('change', updateFilteredCount);
-            elements.productSearch?.addEventListener('input', updateFilteredCount);
-            
-            // Initial update
+            // Initialize the application
+            console.log('🚀 Shopify Price List Generator initialized');
+            renderPriceListProducts();
             updateFilteredCount();
         });
 
