@@ -1,371 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Price List Generator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Price List Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-gray-50">
-    <div class="container mx-auto p-4 max-w-7xl">
-        <!-- Header -->
-        <div class="bg-white rounded-xl shadow-xl mb-8 p-8">
-            <h1 class="text-4xl font-bold text-gray-900 mb-4">Price List Generator</h1>
-            
-            <!-- Company Information -->
-            <h2 class="text-2xl font-bold mb-6">Company Information</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Company Name</label>
-                    <input id="companyName" type="text" value="Your Company Name" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Company Tagline</label>
-                    <input id="companyTagline" type="text" value="Professional Products & Services" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Phone</label>
-                    <input id="companyPhone" type="text" value="+1 234-567-8900" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Email</label>
-                    <input id="companyEmail" type="email" value="sales@yourcompany.com" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Website</label>
-                    <input id="companyWebsite" type="url" value="https://yourcompany.com" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Terms</label>
-                    <input id="companyTerms" type="text" value="Terms & Conditions Apply" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-            </div>
-
-            <!-- List Configuration -->
-            <h2 class="text-2xl font-bold mb-6">List Configuration</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">List Title</label>
-                    <input id="listTitle" type="text" value="PRODUCT CATALOG" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Bullet Points</label>
-                    <input id="bulletPoint1" type="text" value="Professional Grade" class="w-full p-2 border-2 border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500">
-                    <input id="bulletPoint2" type="text" value="Quality Assured" class="w-full p-2 border-2 border-gray-300 rounded-lg mb-2 focus:ring-2 focus:ring-blue-500">
-                    <input id="bulletPoint3" type="text" value="Fast Delivery" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-            </div>
-
-            <!-- Product Management -->
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Products (<span id="productCount">0</span>)</h2>
-                <div class="flex gap-4">
-                    <button id="addProductBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors">
-                        ➕ Add Product
-                    </button>
-                    <button id="previewBtn" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors">
-                        👁️ Show Preview
-                    </button>
-                    <button id="exportBtn" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors">
-                        📄 Export PDF
-                    </button>
-                </div>
-            </div>
-
-            <!-- Products Container -->
-            <div id="products-container" class="mb-8"></div>
-
-            <!-- Empty State -->
-            <div id="empty-state" class="text-center py-16 bg-gray-100 rounded-xl">
-                <div class="text-6xl mb-4">📦</div>
-                <h3 class="text-xl font-bold mb-2">No products yet</h3>
-                <p class="text-gray-600 mb-6">Add your first product to get started</p>
-                <button id="emptyAddBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    Add First Product
-                </button>
-            </div>
-        </div>
-
-        <!-- Preview Section -->
-        <div id="preview-section" class="bg-white rounded-xl shadow-xl p-8 hidden mb-8"></div>
+  <div class="container mx-auto p-4 max-w-7xl">
+    <!-- Company Information -->
+    <h1 class="text-4xl font-bold mb-6">Price List Generator</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <input id="companyName" class="p-2 border" placeholder="Company Name" value="Your Company Name">
+      <input id="companyTagline" class="p-2 border" placeholder="Company Tagline" value="Professional Products & Services">
+      <input id="companyPhone" class="p-2 border" placeholder="Phone" value="+1 234-567-8900">
+      <input id="companyEmail" class="p-2 border" placeholder="Email" value="sales@yourcompany.com">
+      <input id="companyWebsite" class="p-2 border" placeholder="Website" value="https://yourcompany.com">
+      <input id="companyTerms" class="p-2 border" placeholder="Terms" value="Terms & Conditions Apply">
     </div>
 
+    <!-- Bullet Points & Title -->
+    <input id="listTitle" class="p-2 border mb-4 w-full" value="PRODUCT CATALOG">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <input id="bulletPoint1" class="p-2 border" value="Professional Grade">
+      <input id="bulletPoint2" class="p-2 border" value="Quality Assured">
+      <input id="bulletPoint3" class="p-2 border" value="Fast Delivery">
+    </div>
+
+    <!-- Product Controls -->
+    <div class="flex gap-4 mb-4">
+      <button id="addProductBtn" class="bg-blue-600 px-4 py-2 text-white rounded">➕ Add Product</button>
+      <button id="previewBtn" class="bg-purple-600 px-4 py-2 text-white rounded">👁️ Show Preview</button>
+      <button id="exportBtn" class="bg-green-600 px-4 py-2 text-white rounded">📄 Export PDF</button>
+    </div>
+
+    <div id="products-container" class="mb-6"></div>
+    <div id="preview-section" class="hidden"></div>
+
     <script>
-        // Initialize products array
-        let products = [];
-        let showingPreview = false;
+      let products = [];
+      let showingPreview = false;
 
-        // Get company info from form
-        function getCompanyInfo() {
-            return {
-                name: document.getElementById('companyName').value || 'Your Company Name',
-                tagline: document.getElementById('companyTagline').value || 'Professional Products & Services',
-                phone: document.getElementById('companyPhone').value || '+1 234-567-8900',
-                email: document.getElementById('companyEmail').value || 'sales@yourcompany.com',
-                website: document.getElementById('companyWebsite').value || 'https://yourcompany.com',
-                terms: document.getElementById('companyTerms').value || 'Terms & Conditions Apply'
-            };
-        }
+      function getCompanyInfo() {
+        return {
+          name: document.getElementById('companyName').value,
+          tagline: document.getElementById('companyTagline').value,
+          phone: document.getElementById('companyPhone').value,
+          email: document.getElementById('companyEmail').value,
+          website: document.getElementById('companyWebsite').value,
+          terms: document.getElementById('companyTerms').value
+        };
+      }
 
-        // Get bullet points from form
-        function getBulletPoints() {
-            return {
-                point1: document.getElementById('bulletPoint1').value || 'Professional Grade',
-                point2: document.getElementById('bulletPoint2').value || 'Quality Assured',
-                point3: document.getElementById('bulletPoint3').value || 'Fast Delivery'
-            };
-        }
+      function getBulletPoints() {
+        return {
+          point1: document.getElementById('bulletPoint1').value,
+          point2: document.getElementById('bulletPoint2').value,
+          point3: document.getElementById('bulletPoint3').value
+        };
+      }
 
-        // YOUR EXACT preview function
-        function renderPreviewSheet(products, companyInfo, listTitle, bulletPoints, containerId = 'preview-section') {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            const safeHTML = products.map(product => {
-                const specsHTML = Object.entries(product.specs || {}).map(([key, value]) => {
-                    if (!value) return '';
-                    const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-                    return `<div><strong>${label}:</strong> ${value}</div>`;
-                }).join('');
-                return `
-                    <div class="product-card" style="border:1px solid #ccc; border-radius:8px; padding:1em; margin-bottom:1em;">
-                        <h3 style="font-size:1.2em; margin-bottom:0.5em;">${product.model}</h3>
-                        ${product.image ? `<img src="${product.image}" alt="${product.model}" style="max-height:100px; margin-bottom:0.5em;"/>` : '<div style="height:100px; background:#eee; margin-bottom:0.5em; display:flex; align-items:center; justify-content:center;">No image</div>'}
-                        <div style="margin-bottom:0.5em;">${specsHTML}</div>
-                        <div style="font-weight:bold; margin-bottom:0.3em;">Price: ${product.price}</div>
-                        <div style="font-size:0.9em; color:gray;">${product.incVat || ''}</div>
-                        ${product.productUrl ? `<div style="margin-top:0.5em;"><a href="${product.productUrl}" target="_blank">View Product</a></div>` : ''}
-                    </div>
-                `;
-            }).join('');
-            container.innerHTML = `
-                <div class="preview-header" style="background:#1e3a8a; color:white; padding:1em; border-radius:8px; margin-bottom:1em;">
-                    <h1 style="margin-bottom:0.2em;">${companyInfo.name}</h1>
-                    <p style="font-style:italic;">${companyInfo.tagline}</p>
-                    <p style="font-size:0.9em;">${companyInfo.terms}</p>
-                    <h2 style="margin-top:1em; font-size:1.4em;">${listTitle}</h2>
-                    <ul style="margin-top:0.5em;">
-                        <li>${bulletPoints.point1}</li>
-                        <li>${bulletPoints.point2}</li>
-                        <li>${bulletPoints.point3}</li>
-                    </ul>
-                </div>
-                <div class="preview-body">
-                    ${safeHTML}
-                </div>
-                <div class="preview-footer" style="background:#111827; color:white; padding:1em; border-radius:8px; margin-top:2em;">
-                    <p>📞 ${companyInfo.phone} &nbsp;&nbsp; ✉️ ${companyInfo.email} &nbsp;&nbsp; 🌐 ${companyInfo.website}</p>
-                    <div style="margin-top:0.5em;">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(companyInfo.website)}" alt="QR Code to website" />
-                    </div>
-                </div>
-            `;
-        }
+      function renderPreviewSheet(products, companyInfo, listTitle, bulletPoints, containerId = 'preview-section') {
+        const container = document.getElementById(containerId);
+        if (!container) return;
 
-        // Add product function
-        function addProduct() {
-            const newProduct = {
-                id: Date.now(),
-                model: '',
-                price: '',
-                image: null,
-                specs: {
-                    description: '',
-                    sku: '',
-                    category: ''
-                },
-                incVat: 'INCL VAT',
-                productUrl: ''
-            };
-            
-            products.push(newProduct);
-            renderProducts();
-            updateUI();
-        }
+        const safeHTML = products.map(product => {
+          const specsHTML = Object.entries(product.specs || {}).map(([key, value]) => {
+            if (!value) return '';
+            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+            return `<div><strong>${label}:</strong> ${value}</div>`;
+          }).join('');
 
-        // Remove product
-        function removeProduct(id) {
-            if (confirm('Remove this product?')) {
-                products = products.filter(p => p.id !== parseInt(id));
-                renderProducts();
-                updateUI();
-            }
-        }
+          return `
+            <div class="product-card" style="border:1px solid #ccc; border-radius:8px; padding:1em; margin-bottom:1em;">
+              <h3 style="font-size:1.2em; margin-bottom:0.5em;">${product.model}</h3>
+              ${product.image ? `<img src="${product.image}" alt="${product.model}" style="max-height:100px; margin-bottom:0.5em;"/>` : '<div style="height:100px; background:#eee; margin-bottom:0.5em; display:flex; align-items:center; justify-content:center;">No image</div>'}
+              <div style="margin-bottom:0.5em;">${specsHTML}</div>
+              <div style="font-weight:bold; margin-bottom:0.3em;">Price: ${product.price}</div>
+              <div style="font-size:0.9em; color:gray;">${product.incVat || ''}</div>
+              ${product.productUrl ? `<div style="margin-top:0.5em;"><a href="${product.productUrl}" target="_blank">View Product</a></div>` : ''}
+            </div>
+          `;
+        }).join('');
 
-        // Update product field
-        function updateProductField(id, field, value) {
-            const product = products.find(p => p.id === parseInt(id));
-            if (product) {
-                if (field.includes('.')) {
-                    const parts = field.split('.');
-                    product[parts[0]][parts[1]] = value;
-                } else {
-                    product[field] = value;
-                }
-            }
-        }
+        container.innerHTML = `
+          <div class="preview-header" style="background:#1e3a8a; color:white; padding:1em; border-radius:8px; margin-bottom:1em;">
+            <h1 style="margin-bottom:0.2em;">${companyInfo.name}</h1>
+            <p style="font-style:italic;">${companyInfo.tagline}</p>
+            <p style="font-size:0.9em;">${companyInfo.terms}</p>
+            <h2 style="margin-top:1em; font-size:1.4em;">${listTitle}</h2>
+            <ul style="margin-top:0.5em;">
+              <li>${bulletPoints.point1}</li>
+              <li>${bulletPoints.point2}</li>
+              <li>${bulletPoints.point3}</li>
+            </ul>
+          </div>
+          <div class="preview-body">${safeHTML}</div>
+          <div class="preview-footer" style="background:#111827; color:white; padding:1em; border-radius:8px; margin-top:2em;">
+            <p>📞 ${companyInfo.phone} &nbsp;&nbsp; ✉️ ${companyInfo.email} &nbsp;&nbsp; 🌐 ${companyInfo.website}</p>
+            <div style="margin-top:0.5em;">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(companyInfo.website)}" alt="QR Code to website" />
+            </div>
+          </div>
+        `;
+      }
 
-        // Handle image upload
-        function handleImageUpload(id, file) {
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    updateProductField(id, 'image', e.target.result);
-                    renderProducts();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // Render products
-        function renderProducts() {
-            const container = document.getElementById('products-container');
-            
-            if (products.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
-
-            container.innerHTML = products.map(product => 
-                '<div class="border-2 border-gray-200 rounded-xl p-6 mb-6 bg-white shadow-sm">' +
-                    '<div class="flex justify-between items-start mb-4">' +
-                        '<h3 class="text-xl font-bold text-gray-900">Product ' + product.id + '</h3>' +
-                        '<button onclick="removeProduct(' + product.id + ')" class="text-red-600 hover:text-red-800 p-2 rounded hover:bg-red-50 transition-colors">' +
-                            '🗑️ Remove' +
-                        '</button>' +
-                    '</div>' +
-                    
-                    '<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">' +
-                        '<div>' +
-                            '<label class="block font-bold mb-2 text-gray-700">Product Name</label>' +
-                            '<input type="text" value="' + (product.model || '') + '" onchange="updateProductField(' + product.id + ', \'model\', this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter product name">' +
-                        '</div>' +
-                        
-                        '<div>' +
-                            '<label class="block font-bold mb-2 text-gray-700">Price</label>' +
-                            '<input type="text" value="' + (product.price || '') + '" onchange="updateProductField(' + product.id + ', \'price\', this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="R 1,000.00">' +
-                        '</div>' +
-                        
-                        '<div>' +
-                            '<label class="block font-bold mb-2 text-gray-700">SKU</label>' +
-                            '<input type="text" value="' + (product.specs.sku || '') + '" onchange="updateProductField(' + product.id + ', \'specs.sku\', this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Product SKU">' +
-                        '</div>' +
-                        
-                        '<div>' +
-                            '<label class="block font-bold mb-2 text-gray-700">Category</label>' +
-                            '<input type="text" value="' + (product.specs.category || '') + '" onchange="updateProductField(' + product.id + ', \'specs.category\', this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Product category">' +
-                        '</div>' +
-                    '</div>' +
-                    
-                    '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">' +
-                        '<div>' +
-                            '<label class="block font-bold mb-2 text-gray-700">Description</label>' +
-                            '<textarea onchange="updateProductField(' + product.id + ', \'specs.description\', this.value)" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Product description">' + (product.specs.description || '') + '</textarea>' +
-                        '</div>' +
-                        
-                        '<div>' +
-                            '<label class="block font-bold mb-2 text-gray-700">Product Image</label>' +
-                            '<input type="file" accept="image/*" onchange="handleImageUpload(' + product.id + ', this.files[0])" class="w-full p-2 border-2 border-gray-300 rounded-lg mb-2">' +
-                            (product.image ? '<img src="' + product.image + '" class="h-20 w-20 object-cover rounded border">' : '<div class="h-20 w-20 bg-gray-100 rounded border flex items-center justify-center text-gray-400">No image</div>') +
-                        '</div>' +
-                    '</div>' +
-                '</div>'
-            ).join('');
-        }
-
-        // Update UI
-        function updateUI() {
-            document.getElementById('productCount').textContent = products.length;
-            document.getElementById('empty-state').style.display = products.length === 0 ? 'block' : 'none';
-        }
-
-        // Show/hide preview
-        function togglePreview() {
-            showingPreview = !showingPreview;
-            const previewSection = document.getElementById('preview-section');
-            const previewBtn = document.getElementById('previewBtn');
-            
-            if (showingPreview) {
-                if (products.length === 0) {
-                    alert('Add some products first!');
-                    showingPreview = false;
-                    return;
-                }
-                
-                const companyInfo = getCompanyInfo();
-                const bulletPoints = getBulletPoints();
-                const listTitle = document.getElementById('listTitle').value || 'PRODUCT CATALOG';
-                
-                renderPreviewSheet(products, companyInfo, listTitle, bulletPoints, 'preview-section');
-                previewSection.classList.remove('hidden');
-                previewBtn.textContent = '🙈 Hide Preview';
-                previewSection.scrollIntoView({ behavior: 'smooth' });
-            } else {
-                previewSection.classList.add('hidden');
-                previewBtn.textContent = '👁️ Show Preview';
-            }
-        }
-
-        // Export to PDF
-        function exportToPDF() {
-            if (products.length === 0) {
-                alert('Add some products first!');
-                return;
-            }
-
-            const companyInfo = getCompanyInfo();
-            const bulletPoints = getBulletPoints();
-            const listTitle = document.getElementById('listTitle').value || 'PRODUCT CATALOG';
-
-            // Create temporary container for export
-            const tempDiv = document.createElement('div');
-            tempDiv.id = 'temp-preview';
-            document.body.appendChild(tempDiv);
-            
-            renderPreviewSheet(products, companyInfo, listTitle, bulletPoints, 'temp-preview');
-            
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(
-                '<!DOCTYPE html>' +
-                '<html>' +
-                '<head>' +
-                    '<title>Price List - ' + companyInfo.name + '</title>' +
-                    '<style>' +
-                        'body { font-family: Arial, sans-serif; margin: 0; padding: 20px; line-height: 1.5; }' +
-                        '@media print { @page { margin: 0.5in; } .no-print { display: none; } }' +
-                        '.controls { position: fixed; top: 10px; right: 10px; z-index: 1000; }' +
-                        '.btn { background: #059669; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px; }' +
-                        '.btn-close { background: #6b7280; }' +
-                    '</style>' +
-                '</head>' +
-                '<body>' +
-                    '<div class="controls no-print">' +
-                        '<button class="btn" onclick="window.print()">🖨️ Print/Save PDF</button>' +
-                        '<button class="btn btn-close" onclick="window.close()">❌ Close</button>' +
-                    '</div>' +
-                    tempDiv.innerHTML +
-                    '<script>setTimeout(function(){ window.print(); }, 1000);</script>' +
-                '</body>' +
-                '</html>'
-            );
-            printWindow.document.close();
-            
-            // Clean up
-            document.body.removeChild(tempDiv);
-        }
-
-        // Event listeners - using addEventListener to prevent conflicts
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add event listeners
-            document.getElementById('addProductBtn').addEventListener('click', addProduct);
-            document.getElementById('emptyAddBtn').addEventListener('click', addProduct);
-            document.getElementById('previewBtn').addEventListener('click', togglePreview);
-            document.getElementById('exportBtn').addEventListener('click', exportToPDF);
-            
-            // Initialize UI
-            updateUI();
-            
-            console.log('Price List Generator loaded successfully');
+      function addProduct() {
+        products.push({
+          id: Date.now(),
+          model: 'Sample Product',
+          price: 'R 0.00',
+          specs: { sku: '', category: '', description: '' },
+          incVat: 'INCL VAT',
+          image: null,
+          productUrl: ''
         });
+        alert('Product added! Try preview now.');
+      }
+
+      function togglePreview() {
+        const section = document.getElementById('preview-section');
+        showingPreview = !showingPreview;
+        if (showingPreview) {
+          renderPreviewSheet(products, getCompanyInfo(), document.getElementById('listTitle').value, getBulletPoints());
+          section.classList.remove('hidden');
+        } else {
+          section.classList.add('hidden');
+        }
+      }
+
+      function exportToPDF() {
+        const printWindow = window.open('', '_blank');
+        renderPreviewSheet(products, getCompanyInfo(), document.getElementById('listTitle').value, getBulletPoints(), 'preview-section');
+        const content = document.getElementById('preview-section').innerHTML;
+        printWindow.document.write(`<html><head><title>Export</title></head><body>${content}<script>window.print();</script></body></html>`);
+        printWindow.document.close();
+      }
+
+      document.getElementById('addProductBtn').addEventListener('click', addProduct);
+      document.getElementById('previewBtn').addEventListener('click', togglePreview);
+      document.getElementById('exportBtn').addEventListener('click', exportToPDF);
     </script>
+  </div>
 </body>
 </html>
