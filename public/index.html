@@ -3,22 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopify Price List Generator</title>
+    <title>Price List Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .gradient-header {
-            background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #2563eb 100%);
-        }
-        
         .product-card {
             transition: all 0.3s ease;
         }
-        
         .product-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
-        
         .preview-card {
             background: white;
             border: 2px solid #e5e7eb;
@@ -26,140 +20,28 @@
             padding: 1.5rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
-        
         .price-badge {
             background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-        }
-        
-        .shopify-connected {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-        
-        .shopify-disconnected {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         }
     </style>
 </head>
 <body class="min-h-screen bg-gray-50">
     <div class="container mx-auto p-4 lg:p-8 max-w-7xl">
-        <!-- Main Header Card -->
+        <!-- Main Header -->
         <div class="bg-white rounded-xl shadow-xl mb-8">
             <div class="p-6 lg:p-8 border-b border-gray-200">
-                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                    <div>
-                        <h1 class="text-2xl lg:text-4xl font-bold text-gray-900 mb-3">Shopify Price List Generator</h1>
-                        <p class="text-gray-600 text-base lg:text-lg">Connect your Shopify store and create professional price lists</p>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div id="connectionStatus" class="flex items-center gap-2 px-4 py-2 shopify-disconnected text-white rounded-lg">
-                            <span>❌</span>
-                            <span class="font-medium">Not Connected</span>
-                        </div>
-                        <button id="shopifyPanelBtn" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            🛍️ Shopify
-                        </button>
-                    </div>
-                </div>
+                <h1 class="text-2xl lg:text-4xl font-bold text-gray-900 mb-3">Price List Generator</h1>
+                <p class="text-gray-600">Create professional price lists and catalogs</p>
             </div>
 
-            <!-- Shopify Connection Panel -->
-            <div id="shopifyPanel" class="p-6 lg:p-8 bg-blue-50 border-b border-blue-200 hidden">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">Shopify Connection</h3>
-                
-                <!-- Connection Form -->
-                <div id="connectionForm" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Store Name</label>
-                            <input id="storeName" type="text" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="your-store-name">
-                            <p class="text-xs text-gray-500 mt-1">Just the store name, not the full URL</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Admin API Access Token</label>
-                            <input id="accessToken" type="password" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="shpat_...">
-                            <p class="text-xs text-gray-500 mt-1">Get from Shopify Admin → Settings → Apps and sales channels → Develop apps</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-4">
-                        <button id="connectBtn" class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            <span id="connectIcon">🛍️</span>
-                            <span id="connectText">Connect to Shopify</span>
-                        </button>
-                        <button id="cancelBtn" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                            Cancel
-                        </button>
-                    </div>
-                    
-                    <!-- Setup Instructions -->
-                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <div class="flex items-start gap-2">
-                            <span class="text-yellow-600">⚠️</span>
-                            <div class="text-sm text-yellow-800">
-                                <p class="font-semibold mb-2">Setup Instructions</p>
-                                <ol class="list-decimal list-inside space-y-1 text-xs">
-                                    <li>Go to your Shopify Admin → Settings → Apps and sales channels</li>
-                                    <li>Click "Develop apps" → "Create an app"</li>
-                                    <li>Name it "Price List Generator"</li>
-                                    <li>Click "Configure Admin API scopes"</li>
-                                    <li>Enable: <strong>read_products</strong> and <strong>read_collections</strong></li>
-                                    <li>Save, then click "Install app"</li>
-                                    <li>Copy the "Admin API access token" (starts with shpat_)</li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Connected State -->
-                <div id="connectedState" class="hidden space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-600">Connected to <strong id="connectedStore"></strong></p>
-                            <p class="text-xs text-gray-500">
-                                <span id="productCount">0</span> products • <span id="collectionCount">0</span> collections
-                            </p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button id="refreshBtn" class="flex items-center gap-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                                <span id="refreshIcon">🔄</span> Refresh
-                            </button>
-                            <button id="disconnectBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                                Disconnect
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="bg-white p-4 rounded-lg border border-gray-200">
-                            <div class="text-2xl font-bold text-blue-600" id="statsProducts">0</div>
-                            <div class="text-sm text-gray-600">Products</div>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200">
-                            <div class="text-2xl font-bold text-green-600" id="statsCollections">0</div>
-                            <div class="text-sm text-gray-600">Collections</div>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200">
-                            <div class="text-2xl font-bold text-purple-600" id="statsTypes">0</div>
-                            <div class="text-sm text-gray-600">Product Types</div>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200">
-                            <div class="text-2xl font-bold text-orange-600" id="statsVendors">0</div>
-                            <div class="text-sm text-gray-600">Vendors</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Company Information Section -->
+            <!-- Company Information -->
             <div class="p-6 lg:p-8">
                 <h3 class="text-lg font-bold text-gray-900 mb-4">Company Information</h3>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-3">Company Name</label>
-                        <input id="companyName" type="text" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-lg" placeholder="Your Company Name" value="Your Company Name">
+                        <input id="companyName" type="text" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="Your Company Name">
                     </div>
-                    
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-3">Company Logo</label>
                         <div class="flex gap-4 items-center">
@@ -170,516 +52,222 @@
                                 </div>
                             </div>
                             <input id="logoInput" type="file" accept="image/*" class="hidden">
-                            <button id="logoUploadBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                Upload Logo
-                            </button>
+                            <button id="logoUploadBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Upload Logo</button>
                         </div>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Phone Number</label>
-                        <input id="companyPhone" type="text" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="+27 11 123 4567" value="+1 234-567-8900">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Phone</label>
+                        <input id="companyPhone" type="text" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="+1 234-567-8900">
                     </div>
-                    
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Email Address</label>
-                        <input id="companyEmail" type="email" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="sales@yourcompany.com" value="sales@yourcompany.com">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Email</label>
+                        <input id="companyEmail" type="email" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="sales@yourcompany.com">
                     </div>
-                    
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-3">Website</label>
-                        <input id="companyWebsite" type="url" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="https://yourcompany.com" value="https://yourcompany.com">
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Company Tagline</label>
-                        <input id="companyTagline" type="text" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Your Company Tagline" value="Your Company Tagline">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">Terms & Conditions</label>
-                        <input id="companyTerms" type="text" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Payment terms: Net 30. T&C's Apply." value="Payment terms: Net 30. Terms & Conditions Apply.">
-                    </div>
-                </div>
-
-                <!-- List Title and Bullet Points -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8 mb-8">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-3">List Title</label>
-                        <input id="listTitle" type="text" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-lg" placeholder="PRODUCT CATALOG" value="PRODUCT CATALOG">
-                    </div>
-                    
-                    <div>
-                        <h3 class="text-sm font-semibold text-gray-700 mb-3">Title Block Bullet Points</h3>
-                        <div class="space-y-2">
-                            <input id="bulletPoint1" type="text" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Professional Grade" value="Professional Grade">
-                            <input id="bulletPoint2" type="text" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Quality Assured" value="Quality Assured">
-                            <input id="bulletPoint3" type="text" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Fast Delivery" value="Fast Delivery">
-                        </div>
+                        <input id="companyWebsite" type="url" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="https://yourcompany.com">
                     </div>
                 </div>
 
                 <!-- Product Management -->
                 <div class="mb-8">
-                    <div class="flex flex-col gap-4 mb-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                            <h3 class="text-xl lg:text-2xl font-bold text-gray-900">
-                                Price List Products (<span id="priceListProductCount">0</span>)
-                            </h3>
-                            
-                            <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                                <button id="previewBtn" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium">
-                                    <span id="previewIcon">👁️</span>
-                                    <span id="previewText">Show Preview</span>
-                                </button>
-                                
-                                <button id="addManualBtn" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                                    ➕ Add Manual Product
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Search -->
-                        <div class="flex flex-col sm:flex-row gap-3">
-                            <div class="relative flex-1">
-                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
-                                <input id="priceListSearch" type="text" placeholder="Search price list products..." class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                            </div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-gray-900">Price List Products (<span id="productCount">0</span>)</h3>
+                        <div class="flex gap-2">
+                            <button id="previewBtn" class="px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium">
+                                <span id="previewIcon">👁️</span> <span id="previewText">Show Preview</span>
+                            </button>
+                            <button id="addProductBtn" class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">➕ Add Product</button>
                         </div>
                     </div>
 
-                    <!-- Product List/Grid -->
-                    <div id="priceListProducts" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Products will be inserted here -->
+                    <!-- Products Container -->
+                    <div id="productsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Products will be added here -->
                     </div>
 
                     <!-- Empty State -->
                     <div id="emptyState" class="text-center py-16 bg-gray-50 rounded-xl">
-                        <div class="text-6xl mb-4">⚡</div>
+                        <div class="text-6xl mb-4">📦</div>
                         <h3 class="text-xl font-semibold text-gray-700 mb-2">No products yet!</h3>
-                        <p class="text-gray-500 mb-6" id="emptyStateText">
-                            Connect to Shopify to import products, or add products manually.
-                        </p>
-                        <div class="flex gap-4 justify-center">
-                            <button id="emptyConnectBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                                Connect to Shopify
-                            </button>
-                            <button id="emptyManualBtn" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium">
-                                Add Manual Product
-                            </button>
-                        </div>
+                        <p class="text-gray-500 mb-6">Add products to create your price list</p>
+                        <button onclick="addProduct()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Add Your First Product</button>
                     </div>
                 </div>
 
-                <!-- Export Options -->
+                <!-- Export Section -->
                 <div id="exportSection" class="text-center mt-8 hidden">
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                        <h4 class="font-semibold text-blue-900 mb-2">Export Instructions</h4>
-                        <p class="text-blue-800 text-sm">
-                            • Click "Export Price List" to open a new window with only your price list<br/>
-                            • The new window will automatically trigger the print dialog<br/>
-                            • Choose "Save as PDF" from the print destination<br/>
-                            • Products with URLs will be clickable when viewed digitally<br/>
-                            • For best results, use A4 paper size and check "More settings" → "Background graphics"
-                        </p>
-                    </div>
-                    <button id="exportBtn" class="flex items-center gap-3 px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl mx-auto">
-                        📥 Export Price List to PDF
-                    </button>
+                    <button id="exportBtn" class="px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold text-lg">📥 Export to PDF</button>
                 </div>
             </div>
         </div>
 
         <!-- Preview Section -->
         <div id="previewSection" class="bg-white rounded-xl shadow-xl hidden">
-            <div class="p-6 lg:p-8 border-b border-gray-200">
+            <div class="p-6 border-b border-gray-200">
                 <h3 class="text-2xl font-bold text-gray-900">Preview</h3>
             </div>
-            <div id="previewContent">
-                <!-- Preview will be generated here -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Loading Modal -->
-    <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 max-w-sm mx-4">
-            <div class="flex items-center">
-                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
-                <span id="loadingText" class="text-gray-900">Loading...</span>
-            </div>
+            <div id="previewContent"></div>
         </div>
     </div>
 
     <script>
         // Application State
-        const state = {
-            shopifyConnected: false,
-            shopifyStore: '',
-            shopifyToken: '',
-            shopifyProducts: [],
-            shopifyCollections: [],
-            productTypes: [],
-            vendors: [],
-            selectedProducts: [],
+        let appState = {
             products: [],
-            filterMode: 'all',
-            viewMode: 'grid',
-            showPreview: false,
-            companyLogo: null
+            companyLogo: null,
+            showPreview: false
         };
 
-        // DOM Elements Cache
-        const elements = {
-            shopifyPanelBtn: document.getElementById('shopifyPanelBtn'),
-            shopifyPanel: document.getElementById('shopifyPanel'),
-            connectionForm: document.getElementById('connectionForm'),
-            connectedState: document.getElementById('connectedState'),
-            storeName: document.getElementById('storeName'),
-            accessToken: document.getElementById('accessToken'),
-            connectBtn: document.getElementById('connectBtn'),
-            cancelBtn: document.getElementById('cancelBtn'),
-            refreshBtn: document.getElementById('refreshBtn'),
-            disconnectBtn: document.getElementById('disconnectBtn'),
-            connectionStatus: document.getElementById('connectionStatus'),
-            priceListProducts: document.getElementById('priceListProducts'),
-            priceListProductCount: document.getElementById('priceListProductCount'),
-            emptyState: document.getElementById('emptyState'),
-            exportSection: document.getElementById('exportSection'),
-            companyName: document.getElementById('companyName'),
-            logoInput: document.getElementById('logoInput'),
-            logoUploadBtn: document.getElementById('logoUploadBtn'),
-            logoPreview: document.getElementById('logoPreview'),
-            previewBtn: document.getElementById('previewBtn'),
-            previewSection: document.getElementById('previewSection'),
-            loadingModal: document.getElementById('loadingModal'),
-            loadingText: document.getElementById('loadingText'),
-            addManualBtn: document.getElementById('addManualBtn'),
-            emptyManualBtn: document.getElementById('emptyManualBtn'),
-            emptyConnectBtn: document.getElementById('emptyConnectBtn'),
-            exportBtn: document.getElementById('exportBtn'),
-            priceListSearch: document.getElementById('priceListSearch')
-        };
-
-        // Utility Functions
-        function showLoading(text = 'Loading...') {
-            if (elements.loadingText) elements.loadingText.textContent = text;
-            if (elements.loadingModal) {
-                elements.loadingModal.classList.remove('hidden');
-                elements.loadingModal.classList.add('flex');
-            }
-        }
-
-        function hideLoading() {
-            if (elements.loadingModal) {
-                elements.loadingModal.classList.add('hidden');
-                elements.loadingModal.classList.remove('flex');
-            }
-        }
-
-        function updateConnectionStatus(connected, store = '') {
-            if (!elements.connectionStatus) return;
-            
-            if (connected) {
-                elements.connectionStatus.innerHTML = `
-                    <span>✅</span>
-                    <span class="font-medium">Connected to ${store}</span>
-                `;
-                elements.connectionStatus.className = 'flex items-center gap-2 px-4 py-2 shopify-connected text-white rounded-lg';
-            } else {
-                elements.connectionStatus.innerHTML = `
-                    <span>❌</span>
-                    <span class="font-medium">Not Connected</span>
-                `;
-                elements.connectionStatus.className = 'flex items-center gap-2 px-4 py-2 shopify-disconnected text-white rounded-lg';
-            }
-        }
-
-        function createPriceListProductCard(product, index) {
-            return `
-                <div class="border-2 border-gray-200 rounded-xl p-6 bg-gray-50 product-card">
-                    <div class="flex justify-between items-start mb-4">
-                        <h4 class="text-xl font-bold text-gray-900">${product.model || `Product ${index + 1}`}</h4>
-                        <div class="flex gap-2">
-                            <button onclick="duplicateProduct('${product.id}')" class="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition-colors" title="Duplicate">📋</button>
-                            <button onclick="removeProduct('${product.id}')" class="text-red-600 hover:text-red-800 p-2 rounded-lg hover:bg-red-50 transition-colors" title="Delete">🗑️</button>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Product Image</label>
-                            <div class="w-full h-24 bg-white rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
-                                ${product.image ? `
-                                    <img src="${product.image}" alt="Product preview" class="w-full h-full object-cover">
-                                ` : `
-                                    <span class="text-gray-400 text-sm">No image</span>
-                                `}
-                            </div>
-                            <input type="file" accept="image/*" onchange="updateProductImage('${product.id}', this)" class="w-full text-xs mt-2">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Model/Name</label>
-                            <input type="text" value="${product.model || ''}" onchange="updateProduct('${product.id}', 'model', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter model name">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Price</label>
-                            <input type="text" value="${product.price || ''}" onchange="updateProduct('${product.id}', 'price', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="R 1,000.00">
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="sm:col-span-2">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Product URL</label>
-                            <input type="url" value="${product.productUrl || ''}" onchange="updateProduct('${product.id}', 'productUrl', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://example.com/product">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">SKU</label>
-                            <input type="text" value="${product.specs?.sku || ''}" onchange="updateProductSpec('${product.id}', 'sku', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter SKU">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Type</label>
-                            <input type="text" value="${product.specs?.type || ''}" onchange="updateProductSpec('${product.id}', 'type', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter type">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Vendor</label>
-                            <input type="text" value="${product.specs?.vendor || ''}" onchange="updateProductSpec('${product.id}', 'vendor', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter vendor">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                            <input type="text" value="${product.specs?.description || ''}" onchange="updateProductSpec('${product.id}', 'description', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Enter description">
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderPriceListProducts() {
-            const searchQuery = elements.priceListSearch?.value.toLowerCase() || '';
-            let filteredProducts = state.products;
-
-            if (searchQuery) {
-                filteredProducts = state.products.filter(product =>
-                    (product.model || '').toLowerCase().includes(searchQuery) ||
-                    Object.values(product.specs || {}).some(spec =>
-                        spec.toString().toLowerCase().includes(searchQuery)
-                    )
-                );
-            }
-
-            if (elements.priceListProductCount) {
-                elements.priceListProductCount.textContent = filteredProducts.length;
-            }
-
-            if (filteredProducts.length > 0) {
-                if (elements.priceListProducts) {
-                    elements.priceListProducts.innerHTML = filteredProducts.map(createPriceListProductCard).join('');
-                }
-                if (elements.emptyState) elements.emptyState.style.display = 'none';
-                if (elements.exportSection) elements.exportSection.classList.remove('hidden');
-            } else if (state.products.length > 0) {
-                if (elements.priceListProducts) {
-                    elements.priceListProducts.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500"><p>No products match your search</p></div>';
-                }
-                if (elements.emptyState) elements.emptyState.style.display = 'none';
-                if (elements.exportSection) elements.exportSection.classList.remove('hidden');
-            } else {
-                if (elements.priceListProducts) elements.priceListProducts.innerHTML = '';
-                if (elements.emptyState) elements.emptyState.style.display = 'block';
-                if (elements.exportSection) elements.exportSection.classList.add('hidden');
-            }
-        }
-
-        // Event Handlers
-        function addManualProduct() {
+        // Add Product
+        function addProduct() {
             const newProduct = {
                 id: Date.now(),
-                model: '',
-                image: null,
-                specs: {
-                    sku: '',
-                    type: '',
-                    vendor: '',
-                    description: ''
-                },
+                name: '',
                 price: '',
-                incVat: 'INCL VAT',
-                productUrl: ''
+                description: '',
+                image: null
             };
-
-            state.products.push(newProduct);
-            renderPriceListProducts();
-            console.log('Added manual product:', newProduct);
+            
+            appState.products.push(newProduct);
+            renderProducts();
+            updateUI();
         }
 
+        // Remove Product
+        function removeProduct(id) {
+            if (confirm('Remove this product?')) {
+                appState.products = appState.products.filter(p => p.id !== parseInt(id));
+                renderProducts();
+                updateUI();
+            }
+        }
+
+        // Update Product
         function updateProduct(id, field, value) {
-            state.products = state.products.map(product =>
-                product.id.toString() === id.toString()
-                    ? { ...product, [field]: value }
-                    : product
-            );
-            console.log('Updated product:', id, field, value);
+            const product = appState.products.find(p => p.id === parseInt(id));
+            if (product) {
+                product[field] = value;
+            }
         }
 
-        function updateProductSpec(id, spec, value) {
-            state.products = state.products.map(product =>
-                product.id.toString() === id.toString()
-                    ? { ...product, specs: { ...product.specs, [spec]: value } }
-                    : product
-            );
-            console.log('Updated product spec:', id, spec, value);
-        }
-
-        function updateProductImage(id, input) {
-            const file = input.files[0];
+        // Update Product Image
+        function updateProductImage(id, file) {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     updateProduct(id, 'image', e.target.result);
-                    renderPriceListProducts();
+                    renderProducts();
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        function removeProduct(id) {
-            if (confirm('Are you sure you want to remove this product?')) {
-                state.products = state.products.filter(product => product.id.toString() !== id.toString());
-                renderPriceListProducts();
-                console.log('Removed product:', id);
-            }
-        }
-
-        function duplicateProduct(id) {
-            const productToDuplicate = state.products.find(p => p.id.toString() === id.toString());
-            if (productToDuplicate) {
-                const newProduct = {
-                    ...productToDuplicate,
-                    id: Date.now(),
-                    model: (productToDuplicate.model || '') + ' (Copy)',
-                    specs: { ...productToDuplicate.specs }
-                };
-                state.products.push(newProduct);
-                renderPriceListProducts();
-                console.log('Duplicated product:', newProduct);
-            }
-        }
-
-        function togglePreview() {
-            state.showPreview = !state.showPreview;
+        // Render Products
+        function renderProducts() {
+            const container = document.getElementById('productsContainer');
             
-            if (state.showPreview) {
-                if (elements.previewSection) elements.previewSection.classList.remove('hidden');
-                if (document.getElementById('previewIcon')) document.getElementById('previewIcon').textContent = '🙈';
-                if (document.getElementById('previewText')) document.getElementById('previewText').textContent = 'Hide Preview';
+            if (appState.products.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = appState.products.map(product => `
+                <div class="border-2 border-gray-200 rounded-xl p-6 bg-white product-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <h4 class="text-xl font-bold text-gray-900">Product ${product.id}</h4>
+                        <button onclick="removeProduct(${product.id})" class="text-red-600 hover:text-red-800 p-2">🗑️</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Product Image</label>
+                            <div class="w-full h-24 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+                                ${product.image ? `<img src="${product.image}" class="w-full h-full object-cover">` : '<span class="text-gray-400">No image</span>'}
+                            </div>
+                            <input type="file" accept="image/*" onchange="updateProductImage(${product.id}, this.files[0])" class="w-full text-xs mt-2">
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Product Name</label>
+                                <input type="text" value="${product.name}" onchange="updateProduct(${product.id}, 'name', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg" placeholder="Enter product name">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Price</label>
+                                <input type="text" value="${product.price}" onchange="updateProduct(${product.id}, 'price', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg" placeholder="R 1,000.00">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                        <textarea onchange="updateProduct(${product.id}, 'description', this.value)" class="w-full p-2 border-2 border-gray-300 rounded-lg" rows="3" placeholder="Product description">${product.description}</textarea>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update UI
+        function updateUI() {
+            document.getElementById('productCount').textContent = appState.products.length;
+            document.getElementById('emptyState').style.display = appState.products.length === 0 ? 'block' : 'none';
+            document.getElementById('exportSection').style.display = appState.products.length > 0 ? 'block' : 'none';
+        }
+
+        // Toggle Preview
+        function togglePreview() {
+            appState.showPreview = !appState.showPreview;
+            const previewSection = document.getElementById('previewSection');
+            const previewBtn = document.getElementById('previewBtn');
+            
+            if (appState.showPreview) {
+                previewSection.classList.remove('hidden');
+                document.getElementById('previewIcon').textContent = '🙈';
+                document.getElementById('previewText').textContent = 'Hide Preview';
                 generatePreview();
             } else {
-                if (elements.previewSection) elements.previewSection.classList.add('hidden');
-                if (document.getElementById('previewIcon')) document.getElementById('previewIcon').textContent = '👁️';
-                if (document.getElementById('previewText')) document.getElementById('previewText').textContent = 'Show Preview';
+                previewSection.classList.add('hidden');
+                document.getElementById('previewIcon').textContent = '👁️';
+                document.getElementById('previewText').textContent = 'Show Preview';
             }
         }
 
+        // Generate Preview
         function generatePreview() {
-            const companyInfo = {
-                name: elements.companyName?.value || 'Your Company Name',
-                phone: document.getElementById('companyPhone')?.value || '+1 234-567-8900',
-                email: document.getElementById('companyEmail')?.value || 'sales@yourcompany.com',
-                website: document.getElementById('companyWebsite')?.value || 'https://yourcompany.com',
-                tagline: document.getElementById('companyTagline')?.value || 'Your Company Tagline',
-                terms: document.getElementById('companyTerms')?.value || 'Payment terms: Net 30. Terms & Conditions Apply.',
-                logo: state.companyLogo
-            };
-
-            const listTitle = document.getElementById('listTitle')?.value || 'PRODUCT CATALOG';
-            const bulletPoints = {
-                point1: document.getElementById('bulletPoint1')?.value || 'Professional Grade',
-                point2: document.getElementById('bulletPoint2')?.value || 'Quality Assured',
-                point3: document.getElementById('bulletPoint3')?.value || 'Fast Delivery'
-            };
+            const companyName = document.getElementById('companyName').value;
+            const companyPhone = document.getElementById('companyPhone').value;
+            const companyEmail = document.getElementById('companyEmail').value;
+            const companyWebsite = document.getElementById('companyWebsite').value;
 
             const previewHTML = `
                 <div class="bg-gradient-to-r from-gray-900 to-blue-900 text-white p-8">
-                    <div class="flex flex-col lg:flex-row justify-between items-start gap-6">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-4 mb-4">
-                                ${companyInfo.logo ? `
-                                    <div class="w-16 h-16 bg-white rounded-lg p-2 flex items-center justify-center">
-                                        <img src="${companyInfo.logo}" alt="${companyInfo.name}" class="w-full h-full object-contain">
-                                    </div>
-                                ` : ''}
-                                <h1 class="text-4xl lg:text-5xl font-bold">${companyInfo.name}</h1>
-                            </div>
-                            <div class="text-sm lg:text-base space-y-2">
-                                <div>• ${companyInfo.tagline}</div>
-                                <div>• Prices are subject to change without prior notice.</div>
-                                <div>• ${companyInfo.terms}</div>
-                            </div>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-4xl font-bold mb-2">${companyName}</h1>
+                            <p class="text-lg">Professional Product Catalog</p>
                         </div>
-
-                        <div class="w-full lg:w-auto text-center lg:text-right">
-                            <div class="bg-blue-600 px-8 py-4 rounded-xl shadow-xl">
-                                <h2 class="text-2xl lg:text-3xl font-bold">${listTitle}</h2>
-                                <div class="text-sm lg:text-base mt-2">
-                                    <div>• ${bulletPoints.point1}</div>
-                                    <div>• ${bulletPoints.point2}</div>
-                                    <div>• ${bulletPoints.point3}</div>
-                                </div>
-                            </div>
-                        </div>
+                        ${appState.companyLogo ? `<img src="${appState.companyLogo}" class="w-20 h-20 object-contain bg-white rounded-lg p-2">` : ''}
                     </div>
                 </div>
 
-                <div class="p-6 lg:p-10">
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                        ${state.products.map(product => `
+                <div class="p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        ${appState.products.map(product => `
                             <div class="preview-card">
-                                <div class="flex flex-col sm:flex-row items-start gap-6">
-                                    <div class="w-full sm:w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border-2 border-gray-200 flex-shrink-0">
-                                        ${product.image ? `
-                                            <img src="${product.image}" alt="${product.model}" class="w-full h-full object-cover">
-                                        ` : `
-                                            <div class="text-gray-400 text-center">
-                                                <div class="text-3xl mb-2">📷</div>
-                                                <div>No Image</div>
-                                            </div>
-                                        `}
+                                <div class="flex gap-4">
+                                    <div class="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                        ${product.image ? `<img src="${product.image}" class="w-full h-full object-cover">` : '<div class="text-gray-400">📷</div>'}
                                     </div>
-                                    
-                                    <div class="flex-1 min-w-0 w-full">
-                                        <h3 class="font-bold text-xl text-gray-900 mb-4">${product.model || 'Product Model'}</h3>
-                                        
-                                        <div class="space-y-2 text-sm">
-                                            ${Object.entries(product.specs || {}).map(([key, value]) => {
-                                                if (!value) return '';
-                                                const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-                                                return `
-                                                    <div class="flex flex-wrap">
-                                                        <span class="text-gray-600 font-medium">• ${label}:</span>
-                                                        <span class="ml-2 font-semibold text-gray-800">${value}</span>
-                                                    </div>
-                                                `;
-                                            }).join('')}
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="w-full sm:w-auto text-center sm:text-right flex-shrink-0">
-                                        <div class="flex flex-col items-center sm:items-end gap-3">
-                                            <div class="price-badge text-white px-6 py-3 rounded-xl shadow-lg">
-                                                <div class="text-2xl font-bold">${product.price || 'R 0.00'}</div>
-                                                ${product.comparePrice ? `<div class="text-xs text-red-400 line-through">${product.comparePrice}</div>` : ''}
-                                                <div class="text-xs text-red-400 font-bold mt-1">${product.incVat || 'INCL VAT'}</div>
-                                            </div>
+                                    <div class="flex-1">
+                                        <h3 class="font-bold text-xl mb-2">${product.name || 'Product Name'}</h3>
+                                        <p class="text-gray-600 mb-3">${product.description || 'No description'}</p>
+                                        <div class="price-badge text-white px-4 py-2 rounded-lg inline-block">
+                                            <span class="text-xl font-bold">${product.price || 'Price'}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -688,349 +276,84 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-900 text-white p-6 lg:p-8 mt-8">
-                    <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
-                        <div class="space-y-2 text-center lg:text-left">
-                            <div class="flex items-center justify-center lg:justify-start gap-3">
-                                <span class="text-xl">📞</span>
-                                <span class="text-lg">${companyInfo.phone}</span>
-                            </div>
-                            <div class="flex items-center justify-center lg:justify-start gap-3">
-                                <span class="text-xl">✉️</span>
-                                <span class="text-lg">${companyInfo.email}</span>
-                            </div>
-                            <div class="flex items-center justify-center lg:justify-start gap-3">
-                                <span class="text-xl">🌐</span>
-                                <span class="text-lg">${companyInfo.website}</span>
-                            </div>
+                <div class="bg-gray-900 text-white p-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p>📞 ${companyPhone} • ✉️ ${companyEmail}</p>
+                            <p>🌐 ${companyWebsite}</p>
                         </div>
-                        
-                        <div class="text-center">
-                            <div class="text-sm mb-3">Scan to visit our website:</div>
-                            <div class="w-24 h-24 bg-white rounded-lg mx-auto flex items-center justify-center shadow-lg p-2">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(companyInfo.website)}" alt="QR Code" class="w-full h-full">
-                            </div>
+                        <div class="w-20 h-20 bg-white rounded-lg p-2">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(companyWebsite)}" class="w-full h-full">
                         </div>
                     </div>
                 </div>
             `;
 
-            const previewContent = document.getElementById('previewContent');
-            if (previewContent) {
-                previewContent.innerHTML = previewHTML;
-            }
+            document.getElementById('previewContent').innerHTML = previewHTML;
         }
 
+        // Export to PDF
         function exportToPDF() {
-            if (state.products.length === 0) {
-                alert('Please add some products before exporting.\n\nTip: Click "Add Manual Product" to create a test product, or connect to Shopify to import products.');
+            if (appState.products.length === 0) {
+                alert('Please add some products before exporting.');
                 return;
             }
 
-            // Generate the same content as preview
-            const companyInfo = {
-                name: elements.companyName?.value || 'Your Company Name',
-                phone: document.getElementById('companyPhone')?.value || '+1 234-567-8900',
-                email: document.getElementById('companyEmail')?.value || 'sales@yourcompany.com',
-                website: document.getElementById('companyWebsite')?.value || 'https://yourcompany.com',
-                tagline: document.getElementById('companyTagline')?.value || 'Your Company Tagline',
-                terms: document.getElementById('companyTerms')?.value || 'Payment terms: Net 30. Terms & Conditions Apply.',
-                logo: state.companyLogo
-            };
-
-            const listTitle = document.getElementById('listTitle')?.value || 'PRODUCT CATALOG';
-            const bulletPoints = {
-                point1: document.getElementById('bulletPoint1')?.value || 'Professional Grade',
-                point2: document.getElementById('bulletPoint2')?.value || 'Quality Assured',
-                point3: document.getElementById('bulletPoint3')?.value || 'Fast Delivery'
-            };
-
-            const previewContent = `
-                <div class="bg-gradient-to-r from-gray-900 to-blue-900 text-white p-8">
-                    <div class="flex flex-col lg:flex-row justify-between items-start gap-6">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-4 mb-4">
-                                ${companyInfo.logo ? `
-                                    <div class="w-16 h-16 bg-white rounded-lg p-2 flex items-center justify-center">
-                                        <img src="${companyInfo.logo}" alt="${companyInfo.name}" class="w-full h-full object-contain">
-                                    </div>
-                                ` : ''}
-                                <h1 class="text-4xl lg:text-5xl font-bold">${companyInfo.name}</h1>
-                            </div>
-                            <div class="text-sm lg:text-base space-y-2">
-                                <div>• ${companyInfo.tagline}</div>
-                                <div>• Prices are subject to change without prior notice.</div>
-                                <div>• ${companyInfo.terms}</div>
-                            </div>
-                        </div>
-
-                        <div class="w-full lg:w-auto text-center lg:text-right">
-                            <div class="bg-blue-600 px-8 py-4 rounded-xl shadow-xl">
-                                <h2 class="text-2xl lg:text-3xl font-bold">${listTitle}</h2>
-                                <div class="text-sm lg:text-base mt-2">
-                                    <div>• ${bulletPoints.point1}</div>
-                                    <div>• ${bulletPoints.point2}</div>
-                                    <div>• ${bulletPoints.point3}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="p-6 lg:p-10">
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                        ${state.products.map(product => `
-                            <div class="preview-card">
-                                <div class="flex flex-col sm:flex-row items-start gap-6">
-                                    <div class="w-full sm:w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border-2 border-gray-200 flex-shrink-0">
-                                        ${product.image ? `
-                                            <img src="${product.image}" alt="${product.model}" class="w-full h-full object-cover">
-                                        ` : `
-                                            <div class="text-gray-400 text-center">
-                                                <div class="text-3xl mb-2">📷</div>
-                                                <div>No Image</div>
-                                            </div>
-                                        `}
-                                    </div>
-                                    
-                                    <div class="flex-1 min-w-0 w-full">
-                                        <h3 class="font-bold text-xl text-gray-900 mb-4">${product.model || 'Product Model'}</h3>
-                                        
-                                        <div class="space-y-2 text-sm">
-                                            ${Object.entries(product.specs || {}).map(([key, value]) => {
-                                                if (!value) return '';
-                                                const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-                                                return `
-                                                    <div class="flex flex-wrap">
-                                                        <span class="text-gray-600 font-medium">• ${label}:</span>
-                                                        <span class="ml-2 font-semibold text-gray-800">${value}</span>
-                                                    </div>
-                                                `;
-                                            }).join('')}
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="w-full sm:w-auto text-center sm:text-right flex-shrink-0">
-                                        <div class="flex flex-col items-center sm:items-end gap-3">
-                                            <div class="price-badge text-white px-6 py-3 rounded-xl shadow-lg">
-                                                <div class="text-2xl font-bold">${product.price || 'R 0.00'}</div>
-                                                ${product.comparePrice ? `<div class="text-xs text-red-400 line-through">${product.comparePrice}</div>` : ''}
-                                                <div class="text-xs text-red-400 font-bold mt-1">${product.incVat || 'INCL VAT'}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <div class="bg-gray-900 text-white p-6 lg:p-8 mt-8">
-                    <div class="flex flex-col lg:flex-row justify-between items-center gap-6">
-                        <div class="space-y-2 text-center lg:text-left">
-                            <div class="flex items-center justify-center lg:justify-start gap-3">
-                                <span class="text-xl">📞</span>
-                                <span class="text-lg">${companyInfo.phone}</span>
-                            </div>
-                            <div class="flex items-center justify-center lg:justify-start gap-3">
-                                <span class="text-xl">✉️</span>
-                                <span class="text-lg">${companyInfo.email}</span>
-                            </div>
-                            <div class="flex items-center justify-center lg:justify-start gap-3">
-                                <span class="text-xl">🌐</span>
-                                <span class="text-lg">${companyInfo.website}</span>
-                            </div>
-                        </div>
-                        
-                        <div class="text-center">
-                            <div class="text-sm mb-3">Scan to visit our website:</div>
-                            <div class="w-24 h-24 bg-white rounded-lg mx-auto flex items-center justify-center shadow-lg p-2">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(companyInfo.website)}" alt="QR Code" class="w-full h-full">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
+            generatePreview();
             const printWindow = window.open('', '_blank');
-            if (!printWindow) {
-                alert('Popup blocked! Please allow popups for this site and try again.');
-                return;
-            }
-
-            const printDocument = `
+            const previewContent = document.getElementById('previewContent').innerHTML;
+            
+            printWindow.document.write(`
                 <!DOCTYPE html>
                 <html>
-                    <head>
-                        <title>Price List - ${companyInfo.name}</title>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <script src="https://cdn.tailwindcss.com"></script>
-                        <style>
-                            * { margin: 0; padding: 0; box-sizing: border-box; }
-                            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.5; color: #111827; background: white; }
-                            @media print { 
-                                @page { margin: 0.5in; size: A4; } 
-                                body { -webkit-print-color-adjust: exact; color-adjust: exact; print-color-adjust: exact; } 
-                                .print-controls { display: none !important; }
-                            }
-                            .preview-card {
-                                background: white;
-                                border: 2px solid #e5e7eb;
-                                border-radius: 0.75rem;
-                                padding: 1.5rem;
-                                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                            }
-                            .price-badge {
-                                background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-                            }
-                            .print-controls {
-                                position: fixed;
-                                top: 20px;
-                                right: 20px;
-                                background: white;
-                                padding: 15px;
-                                border-radius: 10px;
-                                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                                z-index: 1000;
-                                display: flex;
-                                gap: 10px;
-                            }
-                            .print-btn {
-                                background: #059669;
-                                color: white;
-                                border: none;
-                                padding: 10px 20px;
-                                border-radius: 6px;
-                                cursor: pointer;
-                                font-weight: 600;
-                            }
-                            .print-btn:hover {
-                                background: #047857;
-                            }
-                            .close-btn {
-                                background: #6b7280;
-                                color: white;
-                                border: none;
-                                padding: 10px 20px;
-                                border-radius: 6px;
-                                cursor: pointer;
-                                font-weight: 600;
-                            }
-                            .close-btn:hover {
-                                background: #4b5563;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="print-controls">
-                            <button class="print-btn" onclick="window.print()">🖨️ Print/Save as PDF</button>
-                            <button class="close-btn" onclick="window.close()">❌ Close</button>
-                        </div>
-                        ${previewContent}
-                        <script>
-                            // Auto-trigger print dialog after a short delay
-                            setTimeout(() => {
-                                window.print();
-                            }, 1000);
-                        </script>
-                    </body>
+                <head>
+                    <title>Price List</title>
+                    <script src="https://cdn.tailwindcss.com"></script>
+                    <style>
+                        .preview-card { background: white; border: 2px solid #e5e7eb; border-radius: 0.75rem; padding: 1.5rem; }
+                        .price-badge { background: linear-gradient(135deg, #1f2937 0%, #374151 100%); }
+                        @media print { @page { margin: 0.5in; } }
+                    </style>
+                </head>
+                <body>
+                    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+                        <button onclick="window.print()" style="background: #059669; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Print/Save PDF</button>
+                        <button onclick="window.close()" style="background: #6b7280; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; margin-left: 10px;">Close</button>
+                    </div>
+                    ${previewContent}
+                    <script>setTimeout(() => window.print(), 1000);</script>
+                </body>
                 </html>
-            `;
-
-            try {
-                printWindow.document.write(printDocument);
-                printWindow.document.close();
-                console.log('Export window created successfully');
-            } catch (error) {
-                console.error('Error creating print window:', error);
-                alert('Error creating print window. Please try again.');
-                printWindow.close();
-            }
+            `);
+            printWindow.document.close();
         }
-
-        // Make functions globally available for HTML onclick handlers
-        window.updateProduct = updateProduct;
-        window.updateProductSpec = updateProductSpec;
-        window.updateProductImage = updateProductImage;
-        window.removeProduct = removeProduct;
-        window.duplicateProduct = duplicateProduct;
 
         // Event Listeners
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Shopify Price List Generator initialized');
-
-            // Shopify Panel
-            if (elements.shopifyPanelBtn) {
-                elements.shopifyPanelBtn.addEventListener('click', () => {
-                    if (elements.shopifyPanel) {
-                        elements.shopifyPanel.classList.toggle('hidden');
-                    }
-                });
-            }
-
-            // Manual product buttons
-            if (elements.addManualBtn) {
-                elements.addManualBtn.addEventListener('click', addManualProduct);
-            }
+            document.getElementById('addProductBtn').addEventListener('click', addProduct);
+            document.getElementById('previewBtn').addEventListener('click', togglePreview);
+            document.getElementById('exportBtn').addEventListener('click', exportToPDF);
             
-            if (elements.emptyManualBtn) {
-                elements.emptyManualBtn.addEventListener('click', addManualProduct);
-            }
-            
-            if (elements.emptyConnectBtn) {
-                elements.emptyConnectBtn.addEventListener('click', () => {
-                    if (elements.shopifyPanel) {
-                        elements.shopifyPanel.classList.remove('hidden');
-                    }
-                });
-            }
+            document.getElementById('logoUploadBtn').addEventListener('click', () => {
+                document.getElementById('logoInput').click();
+            });
 
-            // Logo upload
-            if (elements.logoUploadBtn) {
-                elements.logoUploadBtn.addEventListener('click', () => {
-                    if (elements.logoInput) {
-                        elements.logoInput.click();
-                    }
-                });
-            }
+            document.getElementById('logoInput').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        appState.companyLogo = e.target.result;
+                        document.getElementById('logoPreview').innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-full object-contain">
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
 
-            if (elements.logoInput) {
-                elements.logoInput.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            state.companyLogo = e.target.result;
-                            if (elements.logoPreview) {
-                                elements.logoPreview.innerHTML = `
-                                    <img src="${e.target.result}" alt="Company logo" class="w-full h-full object-contain">
-                                `;
-                            }
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-            }
-
-            // Preview and export
-            if (elements.previewBtn) {
-                elements.previewBtn.addEventListener('click', togglePreview);
-            }
-            
-            if (elements.exportBtn) {
-                elements.exportBtn.addEventListener('click', exportToPDF);
-            }
-
-            // Search functionality
-            if (elements.priceListSearch) {
-                elements.priceListSearch.addEventListener('input', renderPriceListProducts);
-            }
-
-            // Initialize the application
-            renderPriceListProducts();
+            updateUI();
         });
-
     </script>
 </body>
 </html>
