@@ -5,170 +5,299 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Price List Generator</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { font-family: Arial, sans-serif; }
-  </style>
 </head>
 <body class="min-h-screen bg-gray-50">
   <div class="container mx-auto p-4 max-w-7xl">
-    <!-- Company Information -->
-    <h1 class="text-4xl font-bold mb-6">Price List Generator</h1>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <input id="companyName"    class="p-2 border rounded" placeholder="Company Name"           value="Your Company Name">
-      <input id="companyTagline" class="p-2 border rounded" placeholder="Company Tagline"        value="Professional Products & Services">
-      <input id="companyPhone"   class="p-2 border rounded" placeholder="Phone"                  value="+1 234-567-8900">
-      <input id="companyEmail"   class="p-2 border rounded" placeholder="Email"                  value="sales@yourcompany.com">
-      <input id="companyWebsite" class="p-2 border rounded" placeholder="Website"                value="https://yourcompany.com">
-      <input id="companyTerms"   class="p-2 border rounded" placeholder="Terms"                  value="Terms & Conditions Apply">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-4xl font-bold">Price List Generator</h1>
+      <div class="bg-green-100 text-green-800 px-4 py-2 rounded">
+        APP STATUS: ONLINE
+      </div>
     </div>
 
-    <!-- List Title & Bullets -->
-    <input id="listTitle" class="p-2 border rounded mb-4 w-full" placeholder="List Title" value="PRODUCT CATALOG">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <input id="bulletPoint1" class="p-2 border rounded" placeholder="Bullet Point 1" value="Professional Grade">
-      <input id="bulletPoint2" class="p-2 border rounded" placeholder="Bullet Point 2" value="Quality Assured">
-      <input id="bulletPoint3" class="p-2 border rounded" placeholder="Bullet Point 3" value="Fast Delivery">
+    <!-- Navigation Tabs -->
+    <div class="border-b border-gray-200 mb-8">
+      <nav class="flex space-x-6">
+        <a href="/" class="py-2 px-1 font-medium text-blue-500 border-b-2 border-blue-500">Home</a>
+        <a href="/my-price-lists" class="py-2 px-1 font-medium hover:text-blue-500">My Price Lists</a>
+        <a href="/create-price-list" class="py-2 px-1 font-medium hover:text-blue-500">Create New</a>
+        <a href="/import-document" class="py-2 px-1 font-medium hover:text-blue-500">Import Document</a>
+        <a href="/templates" class="py-2 px-1 font-medium hover:text-blue-500">Templates</a>
+      </nav>
     </div>
 
-    <!-- Controls -->
-    <div class="flex gap-4 mb-4">
-      <button id="addProductBtn" class="bg-blue-600 px-4 py-2 text-white rounded">➕ Add Product</button>
-      <button id="previewBtn"    class="bg-purple-600 px-4 py-2 text-white rounded">👁️ Show Preview</button>
-      <button id="exportBtn"     class="bg-green-600 px-4 py-2 text-white rounded">📄 Export PDF</button>
+    <!-- Hero Section -->
+    <div class="bg-gradient-to-r from-blue-800 to-blue-900 text-white rounded-lg p-8 mb-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div>
+          <h2 class="text-3xl font-bold mb-4">Professional Price Lists Made Easy</h2>
+          <p class="text-xl mb-6">Create stunning, professional price lists from your Shopify products in minutes. Import existing documents or build from scratch.</p>
+          <div class="flex space-x-4">
+            <a href="/create-price-list" class="bg-white text-blue-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+              🚀 Create Price List
+            </a>
+            <a href="/import-document" class="border border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-900 transition">
+              📄 Import Document
+            </a>
+          </div>
+        </div>
+        <div class="hidden lg:block">
+          <div class="bg-white bg-opacity-10 rounded-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">✨ Key Features</h3>
+            <ul class="space-y-2">
+              <li>🎨 Professional templates</li>
+              <li>📦 Shopify product sync</li>
+              <li>🤖 AI document import</li>
+              <li>📄 PDF & CSV export</li>
+              <li>💼 Company branding</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Products List -->
-    <div id="products-container" class="mb-8"></div>
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+        <div class="text-4xl mb-4">📋</div>
+        <h3 class="text-xl font-semibold mb-2">Create New Price List</h3>
+        <p class="text-gray-600 mb-4">Select products from your Shopify store and create a professional price list with custom branding.</p>
+        <a href="/create-price-list" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
+          Get Started
+        </a>
+      </div>
 
-    <!-- Preview Section -->
-    <div id="preview-section" class="hidden mb-8"></div>
+      <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+        <div class="text-4xl mb-4">📄</div>
+        <h3 class="text-xl font-semibold mb-2">Import Document</h3>
+        <p class="text-gray-600 mb-4">Upload an existing price list (PDF or image) and let AI extract the product information automatically.</p>
+        <a href="/import-document" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
+          Upload File
+        </a>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+        <div class="text-4xl mb-4">📚</div>
+        <h3 class="text-xl font-semibold mb-2">Manage Price Lists</h3>
+        <p class="text-gray-600 mb-4">View, edit, and export your saved price lists. Keep your catalogs organized and up-to-date.</p>
+        <a href="/my-price-lists" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition">
+          View Lists
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Recent Price Lists -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-semibold">Recent Price Lists</h3>
+          <a href="/my-price-lists" class="text-blue-500 hover:text-blue-700 text-sm">View All</a>
+        </div>
+        <div id="recentPriceLists" class="space-y-3">
+          <div class="text-center py-4 text-gray-500">
+            Loading recent price lists...
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistics -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-xl font-semibold mb-4">Your Statistics</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="text-center p-4 bg-blue-50 rounded-lg">
+            <div id="totalPriceLists" class="text-2xl font-bold text-blue-600">0</div>
+            <div class="text-sm text-gray-600">Price Lists</div>
+          </div>
+          <div class="text-center p-4 bg-green-50 rounded-lg">
+            <div id="totalProducts" class="text-2xl font-bold text-green-600">0</div>
+            <div class="text-sm text-gray-600">Products Listed</div>
+          </div>
+          <div class="text-center p-4 bg-purple-50 rounded-lg">
+            <div id="totalExports" class="text-2xl font-bold text-purple-600">0</div>
+            <div class="text-sm text-gray-600">Documents Exported</div>
+          </div>
+          <div class="text-center p-4 bg-orange-50 rounded-lg">
+            <div id="shopifyProducts" class="text-2xl font-bold text-orange-600">0</div>
+            <div class="text-sm text-gray-600">Shopify Products</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Getting Started Guide -->
+    <div class="bg-white rounded-lg shadow-md p-6 mt-8">
+      <h3 class="text-xl font-semibold mb-6">Getting Started Guide</h3>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="text-center">
+          <div class="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">1</div>
+          <h4 class="font-semibold mb-2">Connect Shopify</h4>
+          <p class="text-sm text-gray-600">Your Shopify store is already connected and ready to use.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">2</div>
+          <h4 class="font-semibold mb-2">Select Products</h4>
+          <p class="text-sm text-gray-600">Choose which products to include in your price list.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">3</div>
+          <h4 class="font-semibold mb-2">Customize Design</h4>
+          <p class="text-sm text-gray-600">Add your branding and choose a professional template.</p>
+        </div>
+        <div class="text-center">
+          <div class="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-3">4</div>
+          <h4 class="font-semibold mb-2">Export & Share</h4>
+          <p class="text-sm text-gray-600">Download as PDF or CSV and share with your customers.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-12 text-center text-gray-500 text-sm">
+      <p>Price List Generator - Professional Catalogs Made Simple</p>
+    </div>
   </div>
 
   <script>
-    let products = [];
-    let showingPreview = false;
+    // Global state - vanilla JavaScript only
+    let dashboardData = {
+      priceLists: [],
+      statistics: {}
+    };
 
-    function getCompanyInfo() {
-      return {
-        name:    document.getElementById('companyName').value,
-        tagline: document.getElementById('companyTagline').value,
-        phone:   document.getElementById('companyPhone').value,
-        email:   document.getElementById('companyEmail').value,
-        website: document.getElementById('companyWebsite').value,
-        terms:   document.getElementById('companyTerms').value
-      };
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      loadDashboardData();
+    });
+
+    // Load dashboard data
+    async function loadDashboardData() {
+      try {
+        // Load recent price lists
+        const priceListsResponse = await fetch('/api/price-lists');
+        if (priceListsResponse.ok) {
+          dashboardData.priceLists = await priceListsResponse.json();
+          renderRecentPriceLists();
+          updateStatistics();
+        }
+
+        // Load Shopify products count
+        const productsResponse = await fetch('/api/products');
+        if (productsResponse.ok) {
+          const products = await productsResponse.json();
+          document.getElementById('shopifyProducts').textContent = products.length;
+        }
+
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        renderErrorState();
+      }
     }
 
-    function getBulletPoints() {
-      return {
-        point1: document.getElementById('bulletPoint1').value,
-        point2: document.getElementById('bulletPoint2').value,
-        point3: document.getElementById('bulletPoint3').value
-      };
-    }
+    // Render recent price lists
+    function renderRecentPriceLists() {
+      const container = document.getElementById('recentPriceLists');
+      
+      if (dashboardData.priceLists.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4">
+            <div class="text-gray-500 mb-2">No price lists created yet</div>
+            <a href="/create-price-list" class="text-blue-500 hover:text-blue-700 text-sm">Create your first price list</a>
+          </div>
+        `;
+        return;
+      }
 
-    function renderPreviewSheet(products, companyInfo, listTitle, bulletPoints, containerId = 'preview-section') {
-      const container = document.getElementById(containerId);
-      if (!container) return;
+      // Show last 3 price lists
+      const recent = dashboardData.priceLists
+        .sort(function(a, b) { return new Date(b.createdAt) - new Date(a.createdAt); })
+        .slice(0, 3);
 
-      const safeHTML = products.map(product => {
-        const specsHTML = Object.entries(product.specs || {}).map(([key,value]) => {
-          if (!value) return '';
-          const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g,' $1');
-          return `<div><strong>${label}:</strong> ${value}</div>`;
-        }).join('');
+      container.innerHTML = recent.map(function(list) {
+        const productCount = list.productCount || list.products?.length || 0;
+        const date = formatDate(list.createdAt);
 
         return `
-          <div style="border:1px solid #ccc; border-radius:8px; padding:1em; margin-bottom:1em;">
-            <h3 style="font-size:1.2em; margin-bottom:0.5em;">${product.model}</h3>
-
-            ${product.image
-              ? `<img 
-                   src="${product.image}" 
-                   alt="${product.model}" 
-                   style="max-height:100px; margin-bottom:0.5em; object-fit:cover;" />`
-              : `<div 
-                   style="height:100px; background:#eee; margin-bottom:0.5em; 
-                          display:flex; align-items:center; justify-content:center;">
-                   No image
-                 </div>`}
-
-            <div style="margin-bottom:0.5em;">
-              ${specsHTML}
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div>
+              <h4 class="font-medium text-sm">${list.name}</h4>
+              <p class="text-xs text-gray-500">${productCount} products • ${date}</p>
             </div>
-
-            <div style="font-weight:bold; margin-bottom:0.3em;">
-              Price: ${product.price}
+            <div class="flex space-x-2">
+              <a href="/edit-price-list/${list.id}" class="text-blue-500 hover:text-blue-700 text-xs">Edit</a>
+              <button onclick="exportPriceList('${list.id}', 'pdf')" class="text-green-500 hover:text-green-700 text-xs">PDF</button>
             </div>
-            <div style="font-size:0.9em; color:gray;">
-              ${product.incVat || ''}
-            </div>
-            ${product.productUrl
-              ? `<div style="margin-top:0.5em;">
-                   <a href="${product.productUrl}" target="_blank">View Product</a>
-                 </div>`
-              : ''}
           </div>
         `;
       }).join('');
+    }
 
+    // Update statistics
+    function updateStatistics() {
+      const totalProducts = dashboardData.priceLists.reduce(function(sum, list) {
+        return sum + (list.productCount || list.products?.length || 0);
+      }, 0);
+
+      document.getElementById('totalPriceLists').textContent = dashboardData.priceLists.length;
+      document.getElementById('totalProducts').textContent = totalProducts;
+      document.getElementById('totalExports').textContent = dashboardData.priceLists.length; // Assuming each price list has been exported at least once
+    }
+
+    // Render error state
+    function renderErrorState() {
+      const container = document.getElementById('recentPriceLists');
       container.innerHTML = `
-        <div style="background:#1e3a8a; color:white; padding:1em; border-radius:8px; margin-bottom:1em;">
-          <h1>${companyInfo.name}</h1>
-          <p style="font-style:italic;">${companyInfo.tagline}</p>
-          <p>${companyInfo.terms}</p>
-          <h2 style="margin-top:1em;">${listTitle}</h2>
-          <ul>
-            <li>${bulletPoints.point1}</li>
-            <li>${bulletPoints.point2}</li>
-            <li>${bulletPoints.point3}</li>
-          </ul>
-        </div>
-        <div>${safeHTML}</div>
-        <div style="background:#111827; color:white; padding:1em; border-radius:8px;">
-          <p>📞 ${companyInfo.phone} &nbsp; ✉️ ${companyInfo.email} &nbsp; 🌐 ${companyInfo.website}</p>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(companyInfo.website)}" alt="QR Code">
+        <div class="text-center py-4">
+          <div class="text-red-500 mb-2">Unable to load data</div>
+          <button onclick="loadDashboardData()" class="text-blue-500 hover:text-blue-700 text-sm">Try again</button>
         </div>
       `;
     }
 
-    function addProduct() {
-      products.push({
-        id: Date.now(),
-        model: 'Sample Product',
-        price: 'R 0.00',
-        specs: { sku:'', category:'', description:'' },
-        incVat: 'INCL VAT',
-        image: null,
-        productUrl: ''
-      });
-      alert('Product added! Click "Show Preview" to view.');
-    }
-
-    function togglePreview() {
-      const section = document.getElementById('preview-section');
-      showingPreview = !showingPreview;
-      if (showingPreview) {
-        renderPreviewSheet(products, getCompanyInfo(), document.getElementById('listTitle').value, getBulletPoints());
-        section.classList.remove('hidden');
-      } else {
-        section.classList.add('hidden');
+    // Format date
+    function formatDate(dateString) {
+      if (!dateString) return 'Unknown';
+      try {
+        return new Date(dateString).toLocaleDateString();
+      } catch (e) {
+        return 'Unknown';
       }
     }
 
-    function exportToPDF() {
-      const temp = document.createElement('div');
-      document.body.appendChild(temp);
-      renderPreviewSheet(products, getCompanyInfo(), document.getElementById('listTitle').value, getBulletPoints(), temp.id = 'temp-preview');
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(temp.innerHTML + `<script>window.print();</script>`);
-      printWindow.document.close();
-      document.body.removeChild(temp);
-    }
+    // Export price list (quick action from dashboard)
+    async function exportPriceList(id, format) {
+      try {
+        const response = await fetch(`/api/price-lists/${id}/export`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ format })
+        });
 
-    document.getElementById('addProductBtn').addEventListener('click', addProduct);
-    document.getElementById('previewBtn').addEventListener('click', togglePreview);
-    document.getElementById('exportBtn').addEventListener('click', exportToPDF);
+        if (!response.ok) {
+          throw new Error(`Failed to export as ${format}`);
+        }
+
+        // Handle download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        
+        const list = dashboardData.priceLists.find(function(l) { return l.id === id; });
+        const filename = (list ? list.name : 'price-list').replace(/[^a-zA-Z0-9]/g, '-');
+        a.download = `${filename}.${format}`;
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+      } catch (error) {
+        console.error(`Error exporting ${format}:`, error);
+        alert(`Error exporting ${format}: ` + error.message);
+      }
+    }
   </script>
 </body>
 </html>
