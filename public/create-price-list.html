@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Price List - Price List Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-2xl font-bold text-gray-900">Price List Generator</a>
+                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                        APP STATUS: ONLINE
+                    </span>
+                </div>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="/" class="text-gray-700 hover:text-blue-600 font-medium">Home</a>
+                    <a href="/my-price-lists" class="text-gray-700 hover:text-blue-600 font-medium">My Price Lists</a>
+                    <a href="/create-price-list" class="text-blue-600 font-medium border-b-2 border-blue-600">Create New</a>
+                    <a href="/import-document" class="text-gray-700 hover:text-blue-600 font-medium">Import Document</a>
+                    <a href="/templates" class="text-gray-700 hover:text-blue-600 font-medium">Templates</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Create New Price List</h1>
+            <p class="mt-2 text-gray-600">Build professional price lists from your Shopify products</p>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessages" class="mb-6"></div>
+
+        <!-- Main Form -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Panel - Configuration -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 space-y-6">
+                    <!-- Company Information -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Company Information</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                                <input type="text" id="companyName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your Company Name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" id="companyEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="sales@company.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                <input type="tel" id="companyPhone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="+27 11 123 4567">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                                <input type="url" id="companyWebsite" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://yourstore.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Price List Settings -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Price List Settings</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">List Title</label>
+                                <input type="text" id="listTitle" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Professional Battery Catalog">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                                <select id="currency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="ZAR">ZAR (South African Rand)</option>
+                                    <option value="USD">USD (US Dollar)</option>
+                                    <option value="EUR">EUR (Euro)</option>
+                                    <option value="GBP">GBP (British Pound)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions</label>
+                                <textarea id="terms" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Payment terms are COD. T's & C's Apply."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="space-y-3">
+                        <button id="loadProductsBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                            Load Shopify Products
+                        </button>
+                        <button id="generatePdfBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors" disabled>
+                            Generate PDF Preview
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Product Selection -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-md">
+                    <!-- Search and Filters -->
+                    <div class="p-6 border-b border-gray-200">
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="flex-1">
+                                <input type="text" id="searchProducts" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search products...">
+                            </div>
+                            <button id="selectAllBtn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
+                                Select All Visible
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Product List -->
+                    <div class="p-6">
+                        <div id="loadingState" class="text-center py-12">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                            <p class="text-gray-600">Click "Load Shopify Products" to begin</p>
+                        </div>
+                        
+                        <div id="productList" class="hidden space-y-3">
+                            <!-- Products will be populated here -->
+                        </div>
+                        
+                        <div id="selectedSummary" class="hidden mt-6 p-4 bg-blue-50 rounded-lg">
+                            <p class="text-blue-800 font-medium">
+                                <span id="selectedCount">0</span> products selected for price list
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // State management
+        let state = {
+            products: [],
+            selectedProducts: [],
+            filteredProducts: [],
+            isLoading: false
+        };
+
+        // DOM elements
+        const elements = {
+            loadProductsBtn: document.getElementById('loadProductsBtn'),
+            generatePdfBtn: document.getElementById('generatePdfBtn'),
+            searchProducts: document.getElementById('searchProducts'),
+            selectAllBtn: document.getElementById('selectAllBtn'),
+            productList: document.getElementById('productList'),
+            loadingState: document.getElementById('loadingState'),
+            selectedSummary: document.getElementById('selectedSummary'),
+            selectedCount: document.getElementById('selectedCount'),
+            statusMessages: document.getElementById('statusMessages')
+        };
+
+        // Load products from Shopify
+        elements.loadProductsBtn.addEventListener('click', async () => {
+            try {
+                showLoading('Loading products from Shopify...');
+                elements.loadProductsBtn.disabled = true;
+                
+                const response = await fetch('/api/shopify/products');
+                const data = await response.json();
+                
+                if (data.success) {
+                    state.products = data.products || [];
+                    state.filteredProducts = [...state.products];
+                    renderProducts();
+                    showSuccess(`Loaded ${state.products.length} products from Shopify`);
+                } else {
+                    showError('Failed to load products: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error loading products: ' + error.message);
+            } finally {
+                hideLoading();
+                elements.loadProductsBtn.disabled = false;
+            }
+        });
+
+        // Generate PDF
+        elements.generatePdfBtn.addEventListener('click', async () => {
+            if (state.selectedProducts.length === 0) {
+                showError('Please select at least one product');
+                return;
+            }
+
+            try {
+                elements.generatePdfBtn.disabled = true;
+                elements.generatePdfBtn.textContent = 'Generating PDF...';
+                
+                const companyInfo = {
+                    name: document.getElementById('companyName').value || 'Your Company',
+                    email: document.getElementById('companyEmail').value || 'sales@company.com',
+                    phone: document.getElementById('companyPhone').value || '+27 11 123 4567',
+                    website: document.getElementById('companyWebsite').value || 'https://yourstore.com',
+                    terms: document.getElementById('terms').value || 'Payment terms are COD. T\'s & C\'s Apply.'
+                };
+
+                const priceListData = {
+                    title: document.getElementById('listTitle').value || 'Product Catalog',
+                    currency: document.getElementById('currency').value || 'ZAR',
+                    products: state.selectedProducts,
+                    company: companyInfo,
+                    timestamp: new Date().toISOString()
+                };
+
+                const response = await fetch('/api/price-lists/generate-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(priceListData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('PDF generated successfully!');
+                    if (result.downloadUrl) {
+                        window.open(result.downloadUrl, '_blank');
+                    }
+                } else {
+                    showError('Failed to generate PDF: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                showError('Error generating PDF: ' + error.message);
+            } finally {
+                elements.generatePdfBtn.disabled = false;
+                elements.generatePdfBtn.textContent = 'Generate PDF Preview';
+            }
+        });
+
+        // Search functionality
+        elements.searchProducts.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            state.filteredProducts = state.products.filter(product => 
+                product.title.toLowerCase().includes(query) ||
+                product.vendor?.toLowerCase().includes(query) ||
+                product.productType?.toLowerCase().includes(query)
+            );
+            renderProducts();
+        });
+
+        // Select all visible products
+        elements.selectAllBtn.addEventListener('click', () => {
+            const visibleProductIds = state.filteredProducts.map(p => p.id);
+            const allSelected = visibleProductIds.every(id => 
+                state.selectedProducts.some(p => p.id === id)
+            );
+
+            if (allSelected) {
+                // Deselect all visible
+                state.selectedProducts = state.selectedProducts.filter(p => 
+                    !visibleProductIds.includes(p.id)
+                );
+                elements.selectAllBtn.textContent = 'Select All Visible';
+            } else {
+                // Select all visible
+                state.filteredProducts.forEach(product => {
+                    if (!state.selectedProducts.some(p => p.id === product.id)) {
+                        state.selectedProducts.push(product);
+                    }
+                });
+                elements.selectAllBtn.textContent = 'Deselect All Visible';
+            }
+            
+            renderProducts();
+            updateSelectedSummary();
+        });
+
+        // Render products
+        function renderProducts() {
+            if (state.filteredProducts.length === 0) {
+                elements.productList.innerHTML = '<p class="text-gray-500 text-center py-8">No products found</p>';
+                elements.productList.classList.remove('hidden');
+                elements.loadingState.classList.add('hidden');
+                return;
+            }
+
+            const html = state.filteredProducts.map(product => {
+                const isSelected = state.selectedProducts.some(p => p.id === product.id);
+                const variant = product.variants?.edges?.[0]?.node || {};
+                const price = variant.price || '0.00';
+                const image = product.featuredImage?.url || '/placeholder-image.jpg';
+                
+                return `
+                    <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors ${isSelected ? 'bg-blue-50 border-blue-300' : ''}">
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0">
+                                <input type="checkbox" 
+                                       class="product-checkbox mt-1" 
+                                       data-product-id="${product.id}"
+                                       ${isSelected ? 'checked' : ''}>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <img src="${image}" alt="${product.title}" 
+                                     class="w-16 h-16 object-cover rounded-md border"
+                                     onerror="this.src='/placeholder-image.jpg'">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-medium text-gray-900 truncate">${product.title}</h4>
+                                <p class="text-sm text-gray-500">${product.vendor || 'Unknown Vendor'}</p>
+                                <p class="text-sm text-gray-500">${product.productType || 'Uncategorized'}</p>
+                                <div class="mt-2">
+                                    <span class="text-lg font-semibold text-gray-900">R ${parseFloat(price).toFixed(2)}</span>
+                                    ${variant.sku ? `<span class="ml-2 text-xs text-gray-500">SKU: ${variant.sku}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            elements.productList.innerHTML = html;
+            elements.productList.classList.remove('hidden');
+            elements.loadingState.classList.add('hidden');
+
+            // Add event listeners to checkboxes
+            document.querySelectorAll('.product-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', handleProductSelection);
+            });
+
+            updateSelectedSummary();
+        }
+
+        // Handle product selection
+        function handleProductSelection(e) {
+            const productId = e.target.dataset.productId;
+            const product = state.products.find(p => p.id === productId);
+            
+            if (e.target.checked) {
+                if (!state.selectedProducts.some(p => p.id === productId)) {
+                    state.selectedProducts.push(product);
+                }
+            } else {
+                state.selectedProducts = state.selectedProducts.filter(p => p.id !== productId);
+            }
+            
+            updateSelectedSummary();
+        }
+
+        // Update selected summary
+        function updateSelectedSummary() {
+            elements.selectedCount.textContent = state.selectedProducts.length;
+            
+            if (state.selectedProducts.length > 0) {
+                elements.selectedSummary.classList.remove('hidden');
+                elements.generatePdfBtn.disabled = false;
+            } else {
+                elements.selectedSummary.classList.add('hidden');
+                elements.generatePdfBtn.disabled = true;
+            }
+        }
+
+        // Utility functions
+        function showLoading(message) {
+            elements.loadingState.innerHTML = `
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p class="text-gray-600">${message}</p>
+            `;
+            elements.loadingState.classList.remove('hidden');
+            elements.productList.classList.add('hidden');
+        }
+
+        function hideLoading() {
+            elements.loadingState.classList.add('hidden');
+        }
+
+        function showMessage(message, type = 'info') {
+            const alertClass = {
+                success: 'bg-green-100 border-green-400 text-green-700',
+                error: 'bg-red-100 border-red-400 text-red-700',
+                info: 'bg-blue-100 border-blue-400 text-blue-700'
+            }[type];
+
+            const messageEl = document.createElement('div');
+            messageEl.className = `border-l-4 p-4 mb-4 ${alertClass}`;
+            messageEl.innerHTML = `
+                <div class="flex justify-between">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-sm underline">✕</button>
+                </div>
+            `;
+            
+            elements.statusMessages.appendChild(messageEl);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (messageEl.parentNode) {
+                    messageEl.remove();
+                }
+            }, 5000);
+        }
+
+        function showSuccess(message) { showMessage(message, 'success'); }
+        function showError(message) { showMessage(message, 'error'); }
+    </script>
+</body>
+</html>
