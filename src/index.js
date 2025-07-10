@@ -1,4 +1,4 @@
-// src/index.js - Corrected Version (Fixed Template Literals)
+// src/index.js - Complete Full Version with Real Shopify Integration
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -11,6 +11,281 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ===========================================
+// SHOPIFY SERVICE CLASS (EMBEDDED)
+// ===========================================
+class ShopifyService {
+  constructor() {
+    this.shopDomain = process.env.SHOPIFY_SHOP_NAME || 'cycle1-test.myshopify.com';
+    this.accessToken = process.env.SHOPIFY_ACCESS_TOKEN;
+    this.apiVersion = '2024-07';
+  }
+
+  // Make GraphQL request to Shopify
+  async graphqlRequest(query, variables = {}) {
+    const url = `https://${this.shopDomain}/admin/api/${this.apiVersion}/graphql.json`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': this.accessToken
+      },
+      body: JSON.stringify({
+        query,
+        variables
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Shopify API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.errors) {
+      throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+    }
+
+    return data.data;
+  }
+
+  // Get products with full details
+  async getProducts(limit = 50, cursor = null) {
+    const query = `
+      query getProducts($first: Int!, $after: String) {
+        products(first: $first, after: $after, query: "status:active") {
+          edges {
+            node {
+              id
+              title
+              handle
+              description
+              productType
+              vendor
+              tags
+              status
+              createdAt
+              updatedAt
+              featuredImage {
+                url
+                altText
+                width
+                height
+              }
+              images(first: 5) {
+                edges {
+                  node {
+                    url
+                    altText
+                    width
+                    height
+                  }
+                }
+              }
+              variants(first: 10) {
+                edges {
+                  node {
+                    id
+                    title
+                    price
+                    compareAtPrice
+                    sku
+                    barcode
+                    inventoryQuantity
+                    weight
+                    weightUnit
+                    requiresShipping
+                    taxable
+                    availableForSale
+                  }
+                }
+              }
+              options {
+                id
+                name
+                values
+              }
+            }
+            cursor
+          }
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
+        }
+      }
+    `;
+
+    const result = await this.graphqlRequest(query, {
+      first: limit,
+      after: cursor
+    });
+
+    // Transform the data to a cleaner format
+    const products = result.products.edges.map(edge => ({
+      id: edge.node.id,
+      title: edge.node.title,
+      handle: edge.node.handle,
+      description: edge.node.description,
+      productType: edge.node.productType || 'Uncategorized',
+      vendor: edge.node.vendor || 'Unknown Vendor',
+      tags: edge.node.tags,
+      status: edge.node.status,
+      featuredImage: edge.node.featuredImage,
+      images: edge.node.images.edges.map(img => img.node),
+      variants: edge.node.variants.edges.map(variant => ({
+        id: variant.node.id,
+        title: variant.node.title,
+        price: parseFloat(variant.node.price || '0'),
+        compareAtPrice: variant.node.compareAtPrice ? parseFloat(variant.node.compareAtPrice) : null,
+        sku: variant.node.sku,
+        barcode: variant.node.barcode,
+        inventoryQuantity: variant.node.inventoryQuantity || 0,
+        weight: variant.node.weight,
+        weightUnit: variant.node.weightUnit,
+        availableForSale: variant.node.availableForSale
+      })),
+      options: edge.node.options
+    }));
+
+    return {
+      products,
+      pageInfo: result.products.pageInfo,
+      hasNextPage: result.products.pageInfo.hasNextPage,
+      endCursor: result.products.pageInfo.endCursor
+    };
+  }
+
+  // Get shop information
+  async getShopInfo() {
+    const query = `
+      query getShop {
+        shop {
+          id
+          name
+          email
+          phone
+          myshopifyDomain
+          primaryDomain {
+            url
+            host
+          }
+          plan {
+            displayName
+            partnerDevelopment
+            shopifyPlus
+          }
+          billingAddress {
+            address1
+            address2
+            city
+            province
+            country
+            zip
+          }
+          currencyCode
+          currencyFormats {
+            moneyFormat
+            moneyWithCurrencyFormat
+          }
+          timezone
+          ianaTimezone
+          weightUnit
+        }
+      }
+    `;
+
+    const result = await this.graphqlRequest(query);
+    return result.shop;
+  }
+
+  // Search products
+  async searchProducts(searchTerm, limit = 50) {
+    const query = `
+      query searchProducts($query: String!, $first: Int!) {
+        products(query: $query, first: $first) {
+          edges {
+            node {
+              id
+              title
+              handle
+              productType
+              vendor
+              tags
+              featuredImage {
+                url
+                altText
+              }
+              variants(first: 1) {
+                edges {
+                  node {
+                    id
+                    price
+                    sku
+                    inventoryQuantity
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const searchQuery = `title:*${searchTerm}* OR vendor:*${searchTerm}* OR product_type:*${searchTerm}* AND status:active`;
+    
+    const result = await this.graphqlRequest(query, {
+      query: searchQuery,
+      first: limit
+    });
+
+    return result.products.edges.map(edge => ({
+      id: edge.node.id,
+      title: edge.node.title,
+      handle: edge.node.handle,
+      productType: edge.node.productType || 'Uncategorized',
+      vendor: edge.node.vendor || 'Unknown Vendor',
+      tags: edge.node.tags,
+      featuredImage: edge.node.featuredImage,
+      variants: edge.node.variants.edges.map(variant => ({
+        id: variant.node.id,
+        price: parseFloat(variant.node.price || '0'),
+        sku: variant.node.sku,
+        inventoryQuantity: variant.node.inventoryQuantity || 0
+      }))
+    }));
+  }
+
+  // Test connection
+  async testConnection() {
+    try {
+      const shop = await this.getShopInfo();
+      return {
+        success: true,
+        shop: shop,
+        message: `Successfully connected to ${shop.name}`
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        message: 'Failed to connect to Shopify'
+      };
+    }
+  }
+
+  // Check if properly configured
+  isConfigured() {
+    return !!(this.shopDomain && this.accessToken);
+  }
+}
+
+// Create Shopify service instance
+const shopifyService = new ShopifyService();
+
+// ===========================================
 // MIDDLEWARE SETUP  
 // ===========================================
 app.use(express.json({ limit: '50mb' }));
@@ -21,7 +296,7 @@ const publicPath = path.join(process.cwd(), 'public');
 app.use('/static', express.static(publicPath));
 
 // ===========================================
-// API ROUTES - SIMPLE VERSIONS
+// API ROUTES
 // ===========================================
 
 // Health check
@@ -30,61 +305,172 @@ app.get('/api/health', (req, res) => {
     status: 'healthy',
     message: 'Price List Generator API is running',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    shopifyConfigured: shopifyService.isConfigured()
   });
 });
 
-// Mock Shopify products endpoint (for testing)
-app.get('/api/shopify/products', (req, res) => {
-  // Mock data for testing
-  const mockProducts = [
-    {
-      id: 'gid://shopify/Product/1',
-      title: 'Sunsynk Wall Mount 5.12kWh 51.2V Lithium Battery',
-      vendor: 'Sunsynk',
-      productType: 'Battery',
-      featuredImage: { url: 'https://via.placeholder.com/150x150?text=Battery' },
-      variants: [{ 
-        id: 'gid://shopify/ProductVariant/1',
-        price: '19999.00',
-        sku: 'SUN-BATT-5.12',
-        inventoryQuantity: 5
-      }]
-    },
-    {
-      id: 'gid://shopify/Product/2', 
-      title: '5.12kWh Dyness 51.2V Battery BX51100',
-      vendor: 'Dyness',
-      productType: 'Battery',
-      featuredImage: { url: 'https://via.placeholder.com/150x150?text=Dyness' },
-      variants: [{
-        id: 'gid://shopify/ProductVariant/2',
-        price: '16100.00', 
-        sku: 'BX51100',
-        inventoryQuantity: 3
-      }]
-    },
-    {
-      id: 'gid://shopify/Product/3',
-      title: 'Esener 25.6V 100Ah Multifunctional Lithium Battery',
-      vendor: 'Esener', 
-      productType: 'Battery',
-      featuredImage: { url: 'https://via.placeholder.com/150x150?text=Esener' },
-      variants: [{
-        id: 'gid://shopify/ProductVariant/3',
-        price: '9200.00',
-        sku: 'ES-2.56KWH',
-        inventoryQuantity: 10
-      }]
-    }
-  ];
+// Real Shopify products endpoint with fallback
+app.get('/api/shopify/products', async (req, res) => {
+  try {
+    console.log('🛍️ Fetching products from Shopify...');
+    
+    // Check if Shopify is configured
+    if (!shopifyService.isConfigured()) {
+      console.log('⚠️ Shopify not configured, using mock data');
+      
+      // Return mock data if Shopify not configured
+      const mockProducts = [
+        {
+          id: 'gid://shopify/Product/1',
+          title: 'Sunsynk Wall Mount 5.12kWh 51.2V Lithium Battery',
+          vendor: 'Sunsynk',
+          productType: 'Battery',
+          featuredImage: { url: 'https://via.placeholder.com/150x150?text=Battery' },
+          variants: [{ 
+            id: 'gid://shopify/ProductVariant/1',
+            price: 19999.00,
+            sku: 'SUN-BATT-5.12',
+            inventoryQuantity: 5
+          }]
+        },
+        {
+          id: 'gid://shopify/Product/2', 
+          title: '5.12kWh Dyness 51.2V Battery BX51100',
+          vendor: 'Dyness',
+          productType: 'Battery',
+          featuredImage: { url: 'https://via.placeholder.com/150x150?text=Dyness' },
+          variants: [{
+            id: 'gid://shopify/ProductVariant/2',
+            price: 16100.00, 
+            sku: 'BX51100',
+            inventoryQuantity: 3
+          }]
+        },
+        {
+          id: 'gid://shopify/Product/3',
+          title: 'Esener 25.6V 100Ah Multifunctional Lithium Battery',
+          vendor: 'Esener', 
+          productType: 'Battery',
+          featuredImage: { url: 'https://via.placeholder.com/150x150?text=Esener' },
+          variants: [{
+            id: 'gid://shopify/ProductVariant/3',
+            price: 9200.00,
+            sku: 'ES-2.56KWH',
+            inventoryQuantity: 10
+          }]
+        }
+      ];
 
-  res.json({
-    success: true,
-    products: mockProducts,
-    count: mockProducts.length,
-    message: 'Mock products loaded (will connect to real Shopify when configured)'
-  });
+      return res.json({
+        success: true,
+        products: mockProducts,
+        count: mockProducts.length,
+        message: 'Mock products loaded (configure Shopify to load real products)',
+        source: 'mock'
+      });
+    }
+
+    // Parse query parameters
+    const limit = Math.min(parseInt(req.query.limit) || 50, 250);
+    const cursor = req.query.cursor || null;
+    const search = req.query.search || null;
+
+    let result;
+
+    if (search) {
+      console.log(`🔍 Searching products for: "${search}"`);
+      const products = await shopifyService.searchProducts(search, limit);
+      result = {
+        products: products,
+        hasNextPage: false,
+        endCursor: null
+      };
+    } else {
+      console.log(`📦 Getting all products (limit: ${limit})`);
+      result = await shopifyService.getProducts(limit, cursor);
+    }
+
+    console.log(`✅ Successfully fetched ${result.products.length} products from Shopify`);
+
+    res.json({
+      success: true,
+      products: result.products,
+      count: result.products.length,
+      hasNextPage: result.hasNextPage,
+      endCursor: result.endCursor,
+      message: `Loaded ${result.products.length} products from Shopify`,
+      source: 'shopify'
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching Shopify products:', error);
+    
+    // Return helpful error message
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch products from Shopify',
+      error: error.message,
+      hint: 'Check your SHOPIFY_ACCESS_TOKEN and SHOPIFY_SHOP_NAME environment variables'
+    });
+  }
+});
+
+// Get shop information endpoint
+app.get('/api/shopify/shop', async (req, res) => {
+  try {
+    if (!shopifyService.isConfigured()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Shopify not configured'
+      });
+    }
+
+    const shop = await shopifyService.getShopInfo();
+    
+    res.json({
+      success: true,
+      shop: shop,
+      message: 'Shop information retrieved successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching shop info:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch shop information',
+      error: error.message
+    });
+  }
+});
+
+// Test Shopify connection endpoint
+app.get('/api/shopify/test', async (req, res) => {
+  try {
+    const connectionTest = await shopifyService.testConnection();
+    
+    if (connectionTest.success) {
+      res.json({
+        success: true,
+        message: connectionTest.message,
+        shop: connectionTest.shop
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: connectionTest.message,
+        error: connectionTest.error
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Shopify connection test failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Connection test failed',
+      error: error.message
+    });
+  }
 });
 
 // Simple PDF generation endpoint
@@ -229,7 +615,7 @@ app.get('/', (req, res) => {
   res.send(homeHTML);
 });
 
-// Create price list page
+// Create price list page (Enhanced version with Shopify integration)
 app.get('/create-price-list', (req, res) => {
   const createHTML = `
     <!DOCTYPE html>
@@ -237,156 +623,570 @@ app.get('/create-price-list', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Create Price List</title>
+        <title>Create Price List - Price List Generator</title>
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="bg-gray-50">
-        <div class="max-w-7xl mx-auto py-8 px-4">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center space-x-4">
+                        <a href="/" class="text-2xl font-bold text-gray-900">Price List Generator</a>
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                            APP STATUS: ONLINE
+                        </span>
+                    </div>
+                    <nav class="hidden md:flex space-x-6">
+                        <a href="/" class="text-gray-700 hover:text-blue-600 font-medium">Home</a>
+                        <a href="/my-price-lists" class="text-gray-700 hover:text-blue-600 font-medium">My Price Lists</a>
+                        <a href="/create-price-list" class="text-blue-600 font-medium border-b-2 border-blue-600">Create New</a>
+                        <a href="/import-document" class="text-gray-700 hover:text-blue-600 font-medium">Import Document</a>
+                        <a href="/templates" class="text-gray-700 hover:text-blue-600 font-medium">Templates</a>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <div class="mb-8">
-                <h1 class="text-3xl font-bold">Create New Price List</h1>
-                <p class="text-gray-600 mt-2">Build professional price lists from your products</p>
+                <h1 class="text-3xl font-bold text-gray-900">Create New Price List</h1>
+                <p class="mt-2 text-gray-600">Build professional price lists from your Shopify products</p>
             </div>
 
-            <div class="grid lg:grid-cols-3 gap-8">
-                <!-- Left Panel -->
+            <!-- Status Messages -->
+            <div id="statusMessages" class="mb-6"></div>
+
+            <!-- Main Form -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Panel - Configuration -->
                 <div class="lg:col-span-1">
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h3 class="text-lg font-semibold mb-4">Company Information</h3>
-                        <div class="space-y-4">
-                            <input type="text" id="companyName" placeholder="Company Name" class="w-full p-3 border rounded-lg">
-                            <input type="email" id="companyEmail" placeholder="Email" class="w-full p-3 border rounded-lg">
-                            <input type="tel" id="companyPhone" placeholder="Phone" class="w-full p-3 border rounded-lg">
-                            <input type="text" id="listTitle" placeholder="Price List Title" class="w-full p-3 border rounded-lg">
+                    <div class="bg-white rounded-lg shadow-md p-6 space-y-6">
+                        <!-- Company Information -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Company Information</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                                    <input type="text" id="companyName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your Company Name">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input type="email" id="companyEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="sales@company.com">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                    <input type="tel" id="companyPhone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="+27 11 123 4567">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                                    <input type="url" id="companyWebsite" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://yourstore.com">
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="mt-6 space-y-3">
-                            <button id="loadProducts" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700">
-                                Load Products
+
+                        <!-- Price List Settings -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Price List Settings</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">List Title</label>
+                                    <input type="text" id="listTitle" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Professional Product Catalog">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                                    <select id="currency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="ZAR">ZAR (South African Rand)</option>
+                                        <option value="USD">USD (US Dollar)</option>
+                                        <option value="EUR">EUR (Euro)</option>
+                                        <option value="GBP">GBP (British Pound)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions</label>
+                                    <textarea id="terms" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Payment terms are COD. T's & C's Apply."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Connection Status -->
+                        <div id="connectionStatus" class="p-4 rounded-lg bg-gray-50">
+                            <div class="text-sm text-gray-600">Shopify Connection: <span id="connectionText">Not tested</span></div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="space-y-3">
+                            <button id="testConnectionBtn" class="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">
+                                Test Shopify Connection
                             </button>
-                            <button id="generatePdf" class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700" disabled>
-                                Generate Price List
+                            <button id="loadProductsBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                                Load Shopify Products
+                            </button>
+                            <button id="generatePdfBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors" disabled>
+                                Generate PDF Preview
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Panel -->
+                <!-- Right Panel - Product Selection -->
                 <div class="lg:col-span-2">
-                    <div class="bg-white rounded-lg shadow">
-                        <div class="p-6 border-b">
-                            <h3 class="text-lg font-semibold">Product Selection</h3>
+                    <div class="bg-white rounded-lg shadow-md">
+                        <!-- Search and Filters -->
+                        <div class="p-6 border-b border-gray-200">
+                            <div class="space-y-4">
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <div class="flex-1">
+                                        <input type="text" id="searchProducts" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Search products, vendors, or types...">
+                                    </div>
+                                    <button id="searchBtn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                        Search
+                                    </button>
+                                </div>
+                                
+                                <!-- Filter Options -->
+                                <div class="flex flex-wrap gap-2">
+                                    <select id="vendorFilter" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
+                                        <option value="">All Vendors</option>
+                                    </select>
+                                    <select id="typeFilter" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
+                                        <option value="">All Types</option>
+                                    </select>
+                                    <button id="clearFiltersBtn" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm">
+                                        Clear Filters
+                                    </button>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="flex justify-between items-center">
+                                    <div class="flex gap-2">
+                                        <button id="selectAllBtn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm">
+                                            Select All Visible
+                                        </button>
+                                        <button id="clearSelectionBtn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm">
+                                            Clear Selection
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Product List -->
                         <div class="p-6">
-                            <div id="productArea" class="text-center py-12">
-                                <p class="text-gray-500">Click "Load Products" to begin</p>
+                            <div id="loadingState" class="text-center py-12">
+                                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                <p class="text-gray-600">Click "Load Shopify Products" to begin</p>
+                            </div>
+                            
+                            <div id="productList" class="hidden space-y-3 max-h-96 overflow-y-auto">
+                                <!-- Products will be populated here -->
+                            </div>
+                            
+                            <div id="selectedSummary" class="hidden mt-6 p-4 bg-blue-50 rounded-lg">
+                                <p class="text-blue-800 font-medium">
+                                    <span id="selectedCount">0</span> products selected for price list
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
 
         <script>
-            let selectedProducts = [];
+            // State management
+            let state = {
+                products: [],
+                selectedProducts: [],
+                filteredProducts: [],
+                isLoading: false,
+                allVendors: new Set(),
+                allTypes: new Set()
+            };
 
-            document.getElementById('loadProducts').addEventListener('click', async () => {
-                const btn = document.getElementById('loadProducts');
-                const productArea = document.getElementById('productArea');
-                
+            // DOM elements
+            const elements = {
+                testConnectionBtn: document.getElementById('testConnectionBtn'),
+                loadProductsBtn: document.getElementById('loadProductsBtn'),
+                generatePdfBtn: document.getElementById('generatePdfBtn'),
+                searchProducts: document.getElementById('searchProducts'),
+                searchBtn: document.getElementById('searchBtn'),
+                vendorFilter: document.getElementById('vendorFilter'),
+                typeFilter: document.getElementById('typeFilter'),
+                clearFiltersBtn: document.getElementById('clearFiltersBtn'),
+                selectAllBtn: document.getElementById('selectAllBtn'),
+                clearSelectionBtn: document.getElementById('clearSelectionBtn'),
+                productList: document.getElementById('productList'),
+                loadingState: document.getElementById('loadingState'),
+                selectedSummary: document.getElementById('selectedSummary'),
+                selectedCount: document.getElementById('selectedCount'),
+                statusMessages: document.getElementById('statusMessages'),
+                connectionStatus: document.getElementById('connectionStatus'),
+                connectionText: document.getElementById('connectionText')
+            };
+
+            // Test Shopify connection
+            elements.testConnectionBtn.addEventListener('click', async () => {
+                const btn = elements.testConnectionBtn;
                 btn.disabled = true;
-                btn.textContent = 'Loading...';
+                btn.textContent = 'Testing...';
                 
                 try {
-                    const response = await fetch('/api/shopify/products');
+                    const response = await fetch('/api/shopify/test');
                     const data = await response.json();
                     
                     if (data.success) {
-                        productArea.innerHTML = createProductHTML(data.products);
-                        
-                        // Add change listeners
-                        document.querySelectorAll('.product-checkbox').forEach(checkbox => {
-                            checkbox.addEventListener('change', updateSelection);
-                        });
-                        
-                        updateSelection();
+                        elements.connectionText.textContent = '✅ Connected';
+                        elements.connectionStatus.className = 'p-4 rounded-lg bg-green-50';
+                        showSuccess('Shopify connection successful!');
                     } else {
-                        productArea.innerHTML = '<p class="text-red-500">Error loading products</p>';
+                        elements.connectionText.textContent = '❌ Failed';
+                        elements.connectionStatus.className = 'p-4 rounded-lg bg-red-50';
+                        showError('Connection failed: ' + data.message);
                     }
                 } catch (error) {
-                    productArea.innerHTML = '<p class="text-red-500">Error: ' + error.message + '</p>';
+                    elements.connectionText.textContent = '❌ Error';
+                    elements.connectionStatus.className = 'p-4 rounded-lg bg-red-50';
+                    showError('Connection test failed: ' + error.message);
                 } finally {
                     btn.disabled = false;
-                    btn.textContent = 'Load Products';
+                    btn.textContent = 'Test Shopify Connection';
                 }
             });
 
-            function createProductHTML(products) {
-                return [
-                    '<div class="text-left">',
-                    '<h4 class="font-semibold mb-4">Select Products (' + products.length + ' available)</h4>',
-                    '<div class="space-y-3">',
-                    products.map(product => {
-                        return [
-                            '<label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">',
-                            '<input type="checkbox" value="' + product.id + '" class="product-checkbox mr-3">',
-                            '<div class="flex-1">',
-                            '<div class="font-medium">' + product.title + '</div>',
-                            '<div class="text-sm text-gray-600">' + product.vendor + ' • R ' + parseFloat(product.variants[0].price).toFixed(2) + '</div>',
-                            '</div>',
-                            '</label>'
-                        ].join('');
-                    }).join(''),
-                    '</div>',
-                    '</div>'
-                ].join('');
-            }
+            // Load products from Shopify
+            elements.loadProductsBtn.addEventListener('click', async () => {
+                await loadProducts();
+            });
 
-            function updateSelection() {
-                const checkboxes = document.querySelectorAll('.product-checkbox:checked');
-                document.getElementById('generatePdf').disabled = checkboxes.length === 0;
-            }
+            // Search functionality
+            elements.searchBtn.addEventListener('click', async () => {
+                const searchTerm = elements.searchProducts.value.trim();
+                if (searchTerm) {
+                    await loadProducts(searchTerm);
+                } else {
+                    await loadProducts();
+                }
+            });
 
-            document.getElementById('generatePdf').addEventListener('click', async () => {
-                const btn = document.getElementById('generatePdf');
-                const checkboxes = document.querySelectorAll('.product-checkbox:checked');
+            // Search on Enter key
+            elements.searchProducts.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    elements.searchBtn.click();
+                }
+            });
+
+            // Filter functionality
+            elements.vendorFilter.addEventListener('change', applyFilters);
+            elements.typeFilter.addEventListener('change', applyFilters);
+            elements.clearFiltersBtn.addEventListener('click', () => {
+                elements.vendorFilter.value = '';
+                elements.typeFilter.value = '';
+                elements.searchProducts.value = '';
+                applyFilters();
+            });
+
+            // Selection functionality
+            elements.selectAllBtn.addEventListener('click', () => {
+                const visibleProducts = state.filteredProducts;
+                const allSelected = visibleProducts.every(product => 
+                    state.selectedProducts.some(p => p.id === product.id)
+                );
+
+                if (allSelected) {
+                    // Deselect all visible
+                    state.selectedProducts = state.selectedProducts.filter(p => 
+                        !visibleProducts.some(vp => vp.id === p.id)
+                    );
+                } else {
+                    // Select all visible
+                    visibleProducts.forEach(product => {
+                        if (!state.selectedProducts.some(p => p.id === product.id)) {
+                            state.selectedProducts.push(product);
+                        }
+                    });
+                }
                 
-                if (checkboxes.length === 0) return;
-                
-                btn.disabled = true;
-                btn.textContent = 'Generating...';
-                
+                renderProducts();
+                updateSelectedSummary();
+            });
+
+            elements.clearSelectionBtn.addEventListener('click', () => {
+                state.selectedProducts = [];
+                renderProducts();
+                updateSelectedSummary();
+            });
+
+            // Generate PDF
+            elements.generatePdfBtn.addEventListener('click', async () => {
+                if (state.selectedProducts.length === 0) {
+                    showError('Please select at least one product');
+                    return;
+                }
+
                 try {
+                    elements.generatePdfBtn.disabled = true;
+                    elements.generatePdfBtn.textContent = 'Generating PDF...';
+                    
+                    const companyInfo = {
+                        name: document.getElementById('companyName').value || 'Your Company',
+                        email: document.getElementById('companyEmail').value || 'sales@company.com',
+                        phone: document.getElementById('companyPhone').value || '+27 11 123 4567',
+                        website: document.getElementById('companyWebsite').value || 'https://yourstore.com',
+                        terms: document.getElementById('terms').value || 'Payment terms are COD. T\\'s & C\\'s Apply.'
+                    };
+
+                    const priceListData = {
+                        title: document.getElementById('listTitle').value || 'Product Catalog',
+                        currency: document.getElementById('currency').value || 'ZAR',
+                        products: state.selectedProducts,
+                        company: companyInfo,
+                        timestamp: new Date().toISOString()
+                    };
+
                     const response = await fetch('/api/price-lists/generate-pdf', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            title: document.getElementById('listTitle').value || 'Product Catalog',
-                            company: {
-                                name: document.getElementById('companyName').value || 'Your Company',
-                                email: document.getElementById('companyEmail').value || 'sales@company.com',
-                                phone: document.getElementById('companyPhone').value || '+27 11 123 4567'
-                            },
-                            products: Array.from(checkboxes).map(cb => ({ id: cb.value }))
-                        })
+                        body: JSON.stringify(priceListData)
                     });
-                    
+
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert('✅ ' + result.message);
+                        showSuccess('PDF generated successfully!');
                         if (result.downloadUrl) {
                             window.open(result.downloadUrl, '_blank');
                         }
                     } else {
-                        alert('❌ ' + result.message);
+                        showError('Failed to generate PDF: ' + (result.message || 'Unknown error'));
                     }
                 } catch (error) {
-                    alert('Error: ' + error.message);
+                    showError('Error generating PDF: ' + error.message);
                 } finally {
-                    btn.disabled = false;
-                    btn.textContent = 'Generate Price List';
+                    elements.generatePdfBtn.disabled = false;
+                    elements.generatePdfBtn.textContent = 'Generate PDF Preview';
                 }
             });
+
+            // Load products function
+            async function loadProducts(searchTerm = null) {
+                try {
+                    showLoading('Loading products from Shopify...');
+                    elements.loadProductsBtn.disabled = true;
+                    
+                    let url = '/api/shopify/products?limit=50';
+                    if (searchTerm) {
+                        url += '&search=' + encodeURIComponent(searchTerm);
+                    }
+                    
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        state.products = data.products || [];
+                        state.filteredProducts = [...state.products];
+                        
+                        // Build filter options
+                        buildFilterOptions();
+                        
+                        // Apply any existing filters
+                        applyFilters();
+                        
+                        showSuccess('Loaded ' + state.products.length + ' products from Shopify');
+                        
+                        if (data.source === 'mock') {
+                            showInfo('Using mock data. Configure Shopify credentials to load real products.');
+                        }
+                    } else {
+                        showError('Failed to load products: ' + (data.message || 'Unknown error'));
+                    }
+                } catch (error) {
+                    showError('Error loading products: ' + error.message);
+                } finally {
+                    hideLoading();
+                    elements.loadProductsBtn.disabled = false;
+                }
+            }
+
+            // Build filter options
+            function buildFilterOptions() {
+                // Reset filter sets
+                state.allVendors.clear();
+                state.allTypes.clear();
+                
+                // Collect unique vendors and types
+                state.products.forEach(product => {
+                    if (product.vendor) state.allVendors.add(product.vendor);
+                    if (product.productType) state.allTypes.add(product.productType);
+                });
+                
+                // Populate vendor filter
+                elements.vendorFilter.innerHTML = '<option value="">All Vendors</option>';
+                Array.from(state.allVendors).sort().forEach(vendor => {
+                    const option = document.createElement('option');
+                    option.value = vendor;
+                    option.textContent = vendor;
+                    elements.vendorFilter.appendChild(option);
+                });
+                
+                // Populate type filter
+                elements.typeFilter.innerHTML = '<option value="">All Types</option>';
+                Array.from(state.allTypes).sort().forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    elements.typeFilter.appendChild(option);
+                });
+            }
+
+            // Apply filters
+            function applyFilters() {
+                const vendorFilter = elements.vendorFilter.value;
+                const typeFilter = elements.typeFilter.value;
+                const searchTerm = elements.searchProducts.value.toLowerCase();
+                
+                state.filteredProducts = state.products.filter(product => {
+                    const matchesVendor = !vendorFilter || product.vendor === vendorFilter;
+                    const matchesType = !typeFilter || product.productType === typeFilter;
+                    const matchesSearch = !searchTerm || 
+                        product.title.toLowerCase().includes(searchTerm) ||
+                        (product.vendor && product.vendor.toLowerCase().includes(searchTerm)) ||
+                        (product.productType && product.productType.toLowerCase().includes(searchTerm));
+                    
+                    return matchesVendor && matchesType && matchesSearch;
+                });
+                
+                renderProducts();
+            }
+
+            // Render products
+            function renderProducts() {
+                if (state.filteredProducts.length === 0) {
+                    elements.productList.innerHTML = '<p class="text-gray-500 text-center py-8">No products found</p>';
+                    elements.productList.classList.remove('hidden');
+                    elements.loadingState.classList.add('hidden');
+                    return;
+                }
+
+                const html = state.filteredProducts.map(product => {
+                    const isSelected = state.selectedProducts.some(p => p.id === product.id);
+                    const variant = product.variants && product.variants[0] ? product.variants[0] : {};
+                    const price = variant.price || 0;
+                    const image = product.featuredImage && product.featuredImage.url ? product.featuredImage.url : 'https://via.placeholder.com/64x64?text=No+Image';
+                    
+                    return [
+                        '<div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors ' + (isSelected ? 'bg-blue-50 border-blue-300' : '') + '">',
+                        '<div class="flex items-start space-x-4">',
+                        '<div class="flex-shrink-0">',
+                        '<input type="checkbox" class="product-checkbox mt-1" data-product-id="' + product.id + '"' + (isSelected ? ' checked' : '') + '>',
+                        '</div>',
+                        '<div class="flex-shrink-0">',
+                        '<img src="' + image + '" alt="' + product.title + '" class="w-16 h-16 object-cover rounded-md border" onerror="this.src=\\'https://via.placeholder.com/64x64?text=No+Image\\'">',
+                        '</div>',
+                        '<div class="flex-1 min-w-0">',
+                        '<h4 class="text-sm font-medium text-gray-900 truncate">' + product.title + '</h4>',
+                        '<p class="text-sm text-gray-500">' + (product.vendor || 'Unknown Vendor') + '</p>',
+                        '<p class="text-sm text-gray-500">' + (product.productType || 'Uncategorized') + '</p>',
+                        '<div class="mt-2">',
+                        '<span class="text-lg font-semibold text-gray-900">R ' + price.toFixed(2) + '</span>',
+                        (variant.sku ? '<span class="ml-2 text-xs text-gray-500">SKU: ' + variant.sku + '</span>' : ''),
+                        '</div>',
+                        '<div class="text-xs text-gray-400 mt-1">',
+                        'Stock: ' + (variant.inventoryQuantity || 0),
+                        '</div>',
+                        '</div>',
+                        '</div>',
+                        '</div>'
+                    ].join('');
+                }).join('');
+
+                elements.productList.innerHTML = html;
+                elements.productList.classList.remove('hidden');
+                elements.loadingState.classList.add('hidden');
+
+                // Add event listeners to checkboxes
+                document.querySelectorAll('.product-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', handleProductSelection);
+                });
+
+                updateSelectedSummary();
+            }
+
+            // Handle product selection
+            function handleProductSelection(e) {
+                const productId = e.target.dataset.productId;
+                const product = state.products.find(p => p.id === productId);
+                
+                if (e.target.checked) {
+                    if (!state.selectedProducts.some(p => p.id === productId)) {
+                        state.selectedProducts.push(product);
+                    }
+                } else {
+                    state.selectedProducts = state.selectedProducts.filter(p => p.id !== productId);
+                }
+                
+                updateSelectedSummary();
+            }
+
+            // Update selected summary
+            function updateSelectedSummary() {
+                elements.selectedCount.textContent = state.selectedProducts.length;
+                
+                if (state.selectedProducts.length > 0) {
+                    elements.selectedSummary.classList.remove('hidden');
+                    elements.generatePdfBtn.disabled = false;
+                } else {
+                    elements.selectedSummary.classList.add('hidden');
+                    elements.generatePdfBtn.disabled = true;
+                }
+            }
+
+            // Utility functions
+            function showLoading(message) {
+                elements.loadingState.innerHTML = [
+                    '<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>',
+                    '<p class="text-gray-600">' + message + '</p>'
+                ].join('');
+                elements.loadingState.classList.remove('hidden');
+                elements.productList.classList.add('hidden');
+            }
+
+            function hideLoading() {
+                elements.loadingState.classList.add('hidden');
+            }
+
+            function showMessage(message, type) {
+                const alertClass = {
+                    success: 'bg-green-100 border-green-400 text-green-700',
+                    error: 'bg-red-100 border-red-400 text-red-700',
+                    info: 'bg-blue-100 border-blue-400 text-blue-700',
+                    warning: 'bg-yellow-100 border-yellow-400 text-yellow-700'
+                }[type] || 'bg-blue-100 border-blue-400 text-blue-700';
+
+                const messageEl = document.createElement('div');
+                messageEl.className = 'border-l-4 p-4 mb-4 ' + alertClass;
+                messageEl.innerHTML = [
+                    '<div class="flex justify-between">',
+                    '<span>' + message + '</span>',
+                    '<button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-sm underline">✕</button>',
+                    '</div>'
+                ].join('');
+                
+                elements.statusMessages.appendChild(messageEl);
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    if (messageEl.parentNode) {
+                        messageEl.remove();
+                    }
+                }, 5000);
+            }
+
+            function showSuccess(message) { showMessage(message, 'success'); }
+            function showError(message) { showMessage(message, 'error'); }
+            function showInfo(message) { showMessage(message, 'info'); }
+            function showWarning(message) { showMessage(message, 'warning'); }
         </script>
     </body>
     </html>
@@ -435,4 +1235,5 @@ app.listen(PORT, () => {
   console.log('📱 Frontend: http://localhost:' + PORT);
   console.log('🔌 API: http://localhost:' + PORT + '/api/health');
   console.log('🛍️ Environment: ' + (process.env.NODE_ENV || 'development'));
+  console.log('🔗 Shopify Configured: ' + (shopifyService.isConfigured() ? '✅ Yes' : '❌ No'));
 });
