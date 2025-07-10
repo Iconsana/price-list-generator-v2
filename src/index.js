@@ -1,4 +1,4 @@
-// src/index.js - Minimal Working Version
+// src/index.js - Corrected Version (Fixed Template Literals)
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -19,35 +19,6 @@ app.use(express.urlencoded({ extended: true }));
 // Static files
 const publicPath = path.join(process.cwd(), 'public');
 app.use('/static', express.static(publicPath));
-
-// ===========================================
-// UTILITY FUNCTIONS
-// ===========================================
-function sendFileWithNav(res, filePath) {
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.error('Error sending file:', err);
-      res.status(404).send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Page Not Found</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-        </head>
-        <body class="bg-gray-50 min-h-screen flex items-center justify-center">
-            <div class="text-center">
-                <h1 class="text-4xl font-bold text-gray-900 mb-4">Page Not Found</h1>
-                <p class="text-gray-600 mb-6">The requested page could not be found.</p>
-                <a href="/" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">Return to Home</a>
-            </div>
-        </body>
-        </html>
-      `);
-    }
-  });
-}
 
 // ===========================================
 // API ROUTES - SIMPLE VERSIONS
@@ -126,7 +97,7 @@ app.post('/api/price-lists/generate-pdf', (req, res) => {
       success: true,
       message: 'PDF generation successful!',
       downloadUrl: '/api/test-pdf',
-      fileName: `price-list-${Date.now()}.html`,
+      fileName: 'price-list-' + Date.now() + '.html',
       note: 'This is a mock response - full PDF generation will be implemented next'
     });
   } catch (error) {
@@ -159,7 +130,7 @@ app.get('/api/test-pdf', (req, res) => {
 
 // Home page
 app.get('/', (req, res) => {
-  res.send(`
+  const homeHTML = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -253,12 +224,14 @@ app.get('/', (req, res) => {
         </footer>
     </body>
     </html>
-  `);
+  `;
+  
+  res.send(homeHTML);
 });
 
 // Create price list page
 app.get('/create-price-list', (req, res) => {
-  res.send(`
+  const createHTML = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -328,22 +301,7 @@ app.get('/create-price-list', (req, res) => {
                     const data = await response.json();
                     
                     if (data.success) {
-                        productArea.innerHTML = \`
-                            <div class="text-left">
-                                <h4 class="font-semibold mb-4">Select Products (\${data.products.length} available)</h4>
-                                <div class="space-y-3">
-                                    \${data.products.map(product => \`
-                                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                            <input type="checkbox" value="\${product.id}" class="product-checkbox mr-3">
-                                            <div class="flex-1">
-                                                <div class="font-medium">\${product.title}</div>
-                                                <div class="text-sm text-gray-600">\${product.vendor} • R \${parseFloat(product.variants[0].price).toFixed(2)}</div>
-                                            </div>
-                                        </label>
-                                    \`).join('')}
-                                </div>
-                            </div>
-                        \`;
+                        productArea.innerHTML = createProductHTML(data.products);
                         
                         // Add change listeners
                         document.querySelectorAll('.product-checkbox').forEach(checkbox => {
@@ -361,6 +319,27 @@ app.get('/create-price-list', (req, res) => {
                     btn.textContent = 'Load Products';
                 }
             });
+
+            function createProductHTML(products) {
+                return [
+                    '<div class="text-left">',
+                    '<h4 class="font-semibold mb-4">Select Products (' + products.length + ' available)</h4>',
+                    '<div class="space-y-3">',
+                    products.map(product => {
+                        return [
+                            '<label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">',
+                            '<input type="checkbox" value="' + product.id + '" class="product-checkbox mr-3">',
+                            '<div class="flex-1">',
+                            '<div class="font-medium">' + product.title + '</div>',
+                            '<div class="text-sm text-gray-600">' + product.vendor + ' • R ' + parseFloat(product.variants[0].price).toFixed(2) + '</div>',
+                            '</div>',
+                            '</label>'
+                        ].join('');
+                    }).join(''),
+                    '</div>',
+                    '</div>'
+                ].join('');
+            }
 
             function updateSelection() {
                 const checkboxes = document.querySelectorAll('.product-checkbox:checked');
@@ -411,7 +390,9 @@ app.get('/create-price-list', (req, res) => {
         </script>
     </body>
     </html>
-  `);
+  `;
+  
+  res.send(createHTML);
 });
 
 // Other pages with simple placeholders
@@ -450,8 +431,8 @@ app.use((req, res) => {
 // ===========================================
 
 app.listen(PORT, () => {
-  console.log(\`🚀 Price List Generator server running on port \${PORT}\`);
-  console.log(\`📱 Frontend: http://localhost:\${PORT}\`);
-  console.log(\`🔌 API: http://localhost:\${PORT}/api/health\`);
-  console.log(\`🛍️ Environment: \${process.env.NODE_ENV || 'development'}\`);
+  console.log('🚀 Price List Generator server running on port ' + PORT);
+  console.log('📱 Frontend: http://localhost:' + PORT);
+  console.log('🔌 API: http://localhost:' + PORT + '/api/health');
+  console.log('🛍️ Environment: ' + (process.env.NODE_ENV || 'development'));
 });
