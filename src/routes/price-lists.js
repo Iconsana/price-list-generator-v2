@@ -4,8 +4,10 @@ import { getDB } from '../services/database.js';
 import { generatePriceLisPDF } from '../services/pdfGenerator.js';
 import path from 'path';
 import fs from 'fs';
+import multer from 'multer';
 
 const router = express.Router();
+const upload = multer({ dest: 'uploads/' });
 
 // Get all price lists
 router.get('/', async (req, res) => {
@@ -148,6 +150,34 @@ router.post('/generate-pdf', async (req, res) => {
   }
 });
 
+router.post('/save', async (req, res) => {
+  try {
+    const priceListData = req.body;
+    // Save to your database (LowDB)
+    const savedPriceList = await savePriceListToDB(priceListData);
+    res.json(savedPriceList);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/generate-pdf', async (req, res) => {
+  try {
+    const { priceListData, companyInfo, customerTier } = req.body;
+    
+    // Import your PDF generator
+    const { generateEnhancedPDF } = await import('../utils/PriceListPDFGenerator.js');
+    
+    const pdfBuffer = await generateEnhancedPDF(companyInfo, priceListData.products, customerTier);
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="price-list.pdf"');
+    res.send(pdfBuffer);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Download PDF file
 router.get('/download/:fileName', (req, res) => {
   try {
@@ -206,6 +236,27 @@ router.get('/:id', async (req, res) => {
       message: 'Failed to fetch price list',
       error: error.message
     });
+  }
+});
+
+router.get('/products', async (req, res) => {
+  try {
+    const { session } = req.query;
+    // Fetch products from Shopify API
+    const products = await fetchShopifyProducts(session);
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/saved', async (req, res) => {
+  try {
+    const { shop } = req.query;
+    const priceLists = await getSavedPriceLists(shop);
+    res.json(priceLists);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
