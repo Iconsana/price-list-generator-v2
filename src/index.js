@@ -3,12 +3,20 @@ import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs';
+import cors from 'cors';
+import session from 'express-session';
+import { shopifyApi } from '@shopify/shopify-api';
+import dotenv from 'dotenv';
+
+import priceListRoutes from './routes/priceList.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+dotenv.config();
 
 // ===========================================
 // SHOPIFY SERVICE CLASS (EMBEDDED)
@@ -20,6 +28,16 @@ class ShopifyService {
     this.apiVersion = '2024-07';
   }
 
+// Shopify API configuration
+const shopify = shopifyApi({
+  apiKey: process.env.SHOPIFY_API_KEY,
+  apiSecretKey: process.env.SHOPIFY_API_SECRET,
+  scopes: ['read_products', 'write_products'], // Updated scopes
+  hostName: process.env.APP_URL?.replace('https://', '') || 'localhost',
+  apiVersion: '2025-01',
+  isEmbeddedApp: true,
+});
+  
   // Make GraphQL request to Shopify
   async graphqlRequest(query, variables = {}) {
     const url = `https://${this.shopDomain}/admin/api/${this.apiVersion}/graphql.json`;
@@ -283,12 +301,20 @@ const shopifyService = new ShopifyService();
 // ===========================================
 // MIDDLEWARE SETUP  
 // ===========================================
+app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Static files
 const publicPath = path.join(process.cwd(), 'public');
 app.use('/static', express.static(publicPath));
+app.use(express.static(path.join(__dirname, '../public')));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+}));
+app.use('/api/price-lists', priceListRoutes);
 
 // ===========================================
 // API ROUTES
@@ -820,6 +846,7 @@ app.get('/', (req, res) => {
 });
 
 // Create price list page (Enhanced version with Shopify integration)
+
 app.get('/create-price-list', (req, res) => {
   const createHTML = `
     <!DOCTYPE html>
@@ -1425,6 +1452,12 @@ app.get('/create-price-list', (req, res) => {
   res.send(createHTML);
 });
 
+app.get('/create-price-list', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/create-price-list.html'));
+});
+
+
+
 // Other pages with simple placeholders
 app.get('/my-price-lists', (req, res) => {
   res.send('<h1>My Price Lists</h1><p>Coming soon...</p><a href="/">← Back to Home</a>');
@@ -1436,6 +1469,10 @@ app.get('/import-document', (req, res) => {
 
 app.get('/templates', (req, res) => {
   res.send('<h1>Templates</h1><p>Coming soon...</p><a href="/">← Back to Home</a>');
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // ===========================================
