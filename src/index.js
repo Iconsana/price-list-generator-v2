@@ -1,4 +1,4 @@
-// src/index.js - Complete Full Version with Real Shopify Integration
+// src/index.js - Complete Version with Fixed GraphQL Query
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -49,7 +49,7 @@ class ShopifyService {
     return data.data;
   }
 
-  // Get products with full details
+  // Get products with full details (FIXED QUERY)
   async getProducts(limit = 50, cursor = null) {
     const query = `
       query getProducts($first: Int!, $after: String) {
@@ -92,11 +92,8 @@ class ShopifyService {
                     sku
                     barcode
                     inventoryQuantity
-                    weight
-                    weightUnit
-                    requiresShipping
-                    taxable
                     availableForSale
+                    taxable
                   }
                 }
               }
@@ -143,9 +140,8 @@ class ShopifyService {
         sku: variant.node.sku,
         barcode: variant.node.barcode,
         inventoryQuantity: variant.node.inventoryQuantity || 0,
-        weight: variant.node.weight,
-        weightUnit: variant.node.weightUnit,
-        availableForSale: variant.node.availableForSale
+        availableForSale: variant.node.availableForSale,
+        taxable: variant.node.taxable
       })),
       options: edge.node.options
     }));
@@ -192,7 +188,6 @@ class ShopifyService {
           }
           timezone
           ianaTimezone
-          weightUnit
         }
       }
     `;
@@ -308,6 +303,111 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     shopifyConfigured: shopifyService.isConfigured()
   });
+});
+
+// Enhanced debug endpoint for Shopify connection
+app.get('/api/shopify/debug', async (req, res) => {
+  try {
+    console.log('🔍 DEBUGGING SHOPIFY CONNECTION...');
+    
+    // Check environment variables
+    const envCheck = {
+      SHOPIFY_API_KEY: !!process.env.SHOPIFY_API_KEY,
+      SHOPIFY_API_SECRET: !!process.env.SHOPIFY_API_SECRET,
+      SHOPIFY_ACCESS_TOKEN: !!process.env.SHOPIFY_ACCESS_TOKEN,
+      SHOPIFY_SHOP_NAME: !!process.env.SHOPIFY_SHOP_NAME,
+      shopDomain: process.env.SHOPIFY_SHOP_NAME,
+      tokenFormat: process.env.SHOPIFY_ACCESS_TOKEN ? process.env.SHOPIFY_ACCESS_TOKEN.substring(0, 10) + '...' : 'missing'
+    };
+    
+    console.log('📋 Environment Check:', envCheck);
+    
+    if (!shopifyService.isConfigured()) {
+      return res.json({
+        success: false,
+        message: 'Shopify not configured',
+        debug: envCheck,
+        error: 'Missing required environment variables'
+      });
+    }
+    
+    // Test basic API call
+    const url = `https://${shopifyService.shopDomain}/admin/api/${shopifyService.apiVersion}/graphql.json`;
+    console.log('🔗 Testing URL:', url);
+    
+    const testQuery = `query { shop { name id } }`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': shopifyService.accessToken
+      },
+      body: JSON.stringify({
+        query: testQuery
+      })
+    });
+    
+    console.log('📡 Response Status:', response.status);
+    
+    const responseText = await response.text();
+    console.log('📡 Response Body:', responseText);
+    
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (e) {
+      responseData = { raw: responseText, parseError: e.message };
+    }
+    
+    if (!response.ok) {
+      return res.json({
+        success: false,
+        message: `HTTP ${response.status}: ${response.statusText}`,
+        debug: {
+          ...envCheck,
+          url: url,
+          status: response.status,
+          statusText: response.statusText,
+          responseBody: responseData
+        }
+      });
+    }
+    
+    if (responseData.errors) {
+      return res.json({
+        success: false,
+        message: 'GraphQL Errors',
+        debug: {
+          ...envCheck,
+          url: url,
+          graphqlErrors: responseData.errors,
+          responseBody: responseData
+        }
+      });
+    }
+    
+    // Success
+    res.json({
+      success: true,
+      message: 'Shopify connection successful!',
+      shop: responseData.data?.shop,
+      debug: {
+        ...envCheck,
+        url: url,
+        responseStatus: response.status
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Debug error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Debug failed',
+      error: error.message,
+      stack: error.stack
+    });
+  }
 });
 
 // Real Shopify products endpoint with fallback
@@ -444,112 +544,36 @@ app.get('/api/shopify/shop', async (req, res) => {
   }
 });
 
-app.get('/api/shopify/debug', async (req, res) => {
+// Test Shopify connection endpoint
+app.get('/api/shopify/test', async (req, res) => {
   try {
-    console.log('🔍 DEBUGGING SHOPIFY CONNECTION...');
+    const connectionTest = await shopifyService.testConnection();
     
-    // Check environment variables
-    const envCheck = {
-      SHOPIFY_API_KEY: !!process.env.SHOPIFY_API_KEY,
-      SHOPIFY_API_SECRET: !!process.env.SHOPIFY_API_SECRET,
-      SHOPIFY_ACCESS_TOKEN: !!process.env.SHOPIFY_ACCESS_TOKEN,
-      SHOPIFY_SHOP_NAME: !!process.env.SHOPIFY_SHOP_NAME,
-      shopDomain: process.env.SHOPIFY_SHOP_NAME,
-      tokenFormat: process.env.SHOPIFY_ACCESS_TOKEN ? process.env.SHOPIFY_ACCESS_TOKEN.substring(0, 10) + '...' : 'missing'
-    };
-    
-    console.log('📋 Environment Check:', envCheck);
-    
-    if (!shopifyService.isConfigured()) {
-      return res.json({
+    if (connectionTest.success) {
+      res.json({
+        success: true,
+        message: connectionTest.message,
+        shop: connectionTest.shop
+      });
+    } else {
+      res.status(500).json({
         success: false,
-        message: 'Shopify not configured',
-        debug: envCheck,
-        error: 'Missing required environment variables'
+        message: connectionTest.message,
+        error: connectionTest.error
       });
     }
-    
-    // Test basic API call
-    const url = `https://${shopifyService.shopDomain}/admin/api/${shopifyService.apiVersion}/graphql.json`;
-    console.log('🔗 Testing URL:', url);
-    
-    const testQuery = `query { shop { name id } }`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': shopifyService.accessToken
-      },
-      body: JSON.stringify({
-        query: testQuery
-      })
-    });
-    
-    console.log('📡 Response Status:', response.status);
-    console.log('📡 Response Headers:', Object.fromEntries(response.headers));
-    
-    const responseText = await response.text();
-    console.log('📡 Response Body:', responseText);
-    
-    let responseData;
-    try {
-      responseData = JSON.parse(responseText);
-    } catch (e) {
-      responseData = { raw: responseText, parseError: e.message };
-    }
-    
-    if (!response.ok) {
-      return res.json({
-        success: false,
-        message: `HTTP ${response.status}: ${response.statusText}`,
-        debug: {
-          ...envCheck,
-          url: url,
-          status: response.status,
-          statusText: response.statusText,
-          responseBody: responseData
-        }
-      });
-    }
-    
-    if (responseData.errors) {
-      return res.json({
-        success: false,
-        message: 'GraphQL Errors',
-        debug: {
-          ...envCheck,
-          url: url,
-          graphqlErrors: responseData.errors,
-          responseBody: responseData
-        }
-      });
-    }
-    
-    // Success
-    res.json({
-      success: true,
-      message: 'Shopify connection successful!',
-      shop: responseData.data?.shop,
-      debug: {
-        ...envCheck,
-        url: url,
-        responseStatus: response.status
-      }
-    });
 
   } catch (error) {
-    console.error('❌ Debug error:', error);
+    console.error('❌ Shopify connection test failed:', error);
     res.status(500).json({
       success: false,
-      message: 'Debug failed',
-      error: error.message,
-      stack: error.stack
+      message: 'Connection test failed',
+      error: error.message
     });
   }
 });
 
-// Also add this enhanced test endpoint that replaces your existing one
+// Enhanced test endpoint
 app.get('/api/shopify/test-enhanced', async (req, res) => {
   try {
     console.log('🧪 ENHANCED SHOPIFY TEST...');
@@ -648,35 +672,6 @@ app.get('/api/shopify/test-enhanced', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Enhanced test failed',
-      error: error.message
-    });
-  }
-});
-
-// Test Shopify connection endpoint
-app.get('/api/shopify/test', async (req, res) => {
-  try {
-    const connectionTest = await shopifyService.testConnection();
-    
-    if (connectionTest.success) {
-      res.json({
-        success: true,
-        message: connectionTest.message,
-        shop: connectionTest.shop
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: connectionTest.message,
-        error: connectionTest.error
-      });
-    }
-
-  } catch (error) {
-    console.error('❌ Shopify connection test failed:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Connection test failed',
       error: error.message
     });
   }
@@ -1035,24 +1030,50 @@ app.get('/create-price-list', (req, res) => {
                 connectionText: document.getElementById('connectionText')
             };
 
-            // Test Shopify connection
+            // Enhanced Test Shopify connection
             elements.testConnectionBtn.addEventListener('click', async () => {
                 const btn = elements.testConnectionBtn;
                 btn.disabled = true;
                 btn.textContent = 'Testing...';
                 
                 try {
-                    const response = await fetch('/api/shopify/test');
-                    const data = await response.json();
+                    // First try the debug endpoint which we know works
+                    let response = await fetch('/api/shopify/debug');
+                    let data = await response.json();
                     
                     if (data.success) {
-                        elements.connectionText.textContent = '✅ Connected';
+                        elements.connectionText.textContent = 'Connected to ' + data.shop.name + '';
                         elements.connectionStatus.className = 'p-4 rounded-lg bg-green-50';
-                        showSuccess('Shopify connection successful!');
+                        showSuccess('Connected to ' + data.shop.name + ' successfully!');
+                        
+                        // Also test the products endpoint
+                        try {
+                            const productsResponse = await fetch('/api/shopify/products?limit=1');
+                            const productsData = await productsResponse.json();
+                            
+                            if (productsData.success) {
+                                showSuccess('Products API working - found ' + productsData.count + ' products available');
+                            } else {
+                                showWarning('Shop connected but products API needs attention: ' + productsData.message);
+                            }
+                        } catch (productsError) {
+                            showWarning('Shop connected but products test failed: ' + productsError.message);
+                        }
+                        
                     } else {
-                        elements.connectionText.textContent = '❌ Failed';
-                        elements.connectionStatus.className = 'p-4 rounded-lg bg-red-50';
-                        showError('Connection failed: ' + data.message);
+                        // Fallback to original test endpoint
+                        response = await fetch('/api/shopify/test');
+                        data = await response.json();
+                        
+                        if (data.success) {
+                            elements.connectionText.textContent = '✅ Connected';
+                            elements.connectionStatus.className = 'p-4 rounded-lg bg-green-50';
+                            showSuccess('Shopify connection successful!');
+                        } else {
+                            elements.connectionText.textContent = '❌ Failed';
+                            elements.connectionStatus.className = 'p-4 rounded-lg bg-red-50';
+                            showError('Connection failed: ' + data.message);
+                        }
                     }
                 } catch (error) {
                     elements.connectionText.textContent = '❌ Error';
