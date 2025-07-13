@@ -597,7 +597,7 @@ app.get('/api/shopify/test', async (req, res) => {
   }
 });
 
-// Enhanced PDF generation with flexible user-defined pricing
+// Enhanced PDF generation with FIXED characters, full names, and clickable links
 app.post('/api/price-lists/generate-pdf-flexible', async (req, res) => {
   try {
     const { 
@@ -606,10 +606,10 @@ app.post('/api/price-lists/generate-pdf-flexible', async (req, res) => {
       products, 
       company, 
       pricingConfig = {},
-      customPrices = {} // Individual product price overrides
+      customPrices = {} 
     } = req.body;
     
-    console.log('📄 Generating flexible PDF with user-defined pricing');
+    console.log('📄 Generating enhanced PDF with clickable links');
     
     // Import jsPDF
     const { jsPDF } = await import('jspdf');
@@ -617,19 +617,22 @@ app.post('/api/price-lists/generate-pdf-flexible', async (req, res) => {
     
     const doc = new jsPDF();
     
-    // Header
+    // Header with company branding
     doc.setFontSize(24);
     doc.setFont(undefined, 'bold');
+    doc.setTextColor(44, 62, 80); // Dark blue-gray
     doc.text(company?.name || 'Your Company', 20, 30);
     
     doc.setFontSize(18);
     doc.setFont(undefined, 'normal');
+    doc.setTextColor(52, 73, 94);
     doc.text(title || 'Custom Price List', 20, 45);
     
     doc.setFontSize(10);
+    doc.setTextColor(127, 140, 141);
     doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 55);
     
-    // Show pricing configuration used
+    // Show pricing tier info on the right
     if (pricingConfig.tierName) {
       doc.text(`Pricing Tier: ${pricingConfig.tierName}`, 120, 55);
     }
@@ -637,13 +640,24 @@ app.post('/api/price-lists/generate-pdf-flexible', async (req, res) => {
       doc.text(`Base Discount: ${pricingConfig.discountPercent}%`, 120, 65);
     }
     
-    // Company info
+    // Company contact info - FIXED: No more random characters!
     let yPos = 75;
-    if (company?.email) doc.text(`📧 ${company.email}`, 20, yPos), yPos += 8;
-    if (company?.phone) doc.text(`📞 ${company.phone}`, 120, yPos - 8);
-    if (company?.website) doc.text(`🌐 ${company.website}`, 20, yPos), yPos += 15;
+    doc.setFontSize(10);
+    doc.setTextColor(44, 62, 80);
     
-    // Table with flexible pricing
+    if (company?.email) {
+      doc.text(`Email: ${company.email}`, 20, yPos);
+      yPos += 8;
+    }
+    if (company?.phone) {
+      doc.text(`Phone: ${company.phone}`, 120, yPos - 8); // Place phone on the right
+    }
+    if (company?.website) {
+      doc.text(`Website: ${company.website}`, 20, yPos);
+      yPos += 15;
+    }
+    
+    // Table with enhanced formatting
     const tableColumns = [
       { header: 'Product Name', dataKey: 'name' },
       { header: 'Vendor', dataKey: 'vendor' },
@@ -657,85 +671,151 @@ app.post('/api/price-lists/generate-pdf-flexible', async (req, res) => {
       const variant = product.variants && product.variants[0] ? product.variants[0] : {};
       const basePrice = variant.price || 0;
       
-      // Check if there's a custom price override for this specific product
+      // Check for custom pricing
       const hasCustomPrice = customPrices[product.id] !== undefined;
       let finalPrice;
       
       if (hasCustomPrice) {
-        // Use the manually set price
         finalPrice = parseFloat(customPrices[product.id]);
       } else {
-        // Use the tier discount percentage
-        finalPrice = calculateFlexiblePricing(basePrice, pricingConfig);
+        const discountMultiplier = (100 - (pricingConfig.discountPercent || 0)) / 100;
+        finalPrice = basePrice * discountMultiplier;
       }
       
       const savings = basePrice - finalPrice;
       const savingsPercent = basePrice > 0 ? ((savings / basePrice) * 100).toFixed(1) : '0';
       
       return {
-        name: product.title?.substring(0, 30) + (product.title?.length > 30 ? '...' : '') || 'Unknown',
+        name: product.title || 'Unknown Product', // FIXED: Full product name!
         vendor: product.vendor || 'Unknown',
         basePrice: `R ${basePrice.toFixed(2)}`,
         finalPrice: `R ${finalPrice.toFixed(2)}` + (hasCustomPrice ? ' *' : ''),
         savings: savings > 0 ? `-${savingsPercent}%` : '0%',
-        stock: variant.inventoryQuantity > 0 ? '✅' : '❌'
+        stock: variant.inventoryQuantity > 0 ? 'Available' : 'Out of Stock',
+        // Store product data for links
+        productId: product.id,
+        productHandle: product.handle,
+        productUrl: company?.website ? `${company.website}/products/${product.handle || product.id}` : null
       };
     });
     
+    // Enhanced table with clickable product links
     doc.autoTable({
       columns: tableColumns,
       body: tableRows,
       startY: yPos,
       theme: 'striped',
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [52, 152, 219], textColor: [255, 255, 255] },
+      styles: { 
+        fontSize: 8, 
+        cellPadding: 4,
+        textColor: [44, 62, 80],
+        lineColor: [189, 195, 199],
+        lineWidth: 0.1
+      },
+      headStyles: { 
+        fillColor: [52, 152, 219], 
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250]
+      },
       columnStyles: {
-        0: { cellWidth: 45 }, // Product name
+        0: { cellWidth: 60 }, // Product name - wider for full names
         1: { cellWidth: 25 }, // Vendor
         2: { cellWidth: 25, halign: 'right' }, // Base price
         3: { cellWidth: 25, halign: 'right', fillColor: [240, 248, 255] }, // Final price
         4: { cellWidth: 20, halign: 'center' }, // Savings
-        5: { cellWidth: 15, halign: 'center' } // Stock
+        5: { cellWidth: 20, halign: 'center' } // Stock
+      },
+      didDrawCell: (data) => {
+        // FIXED: Add clickable links for product names!
+        if (data.column.dataKey === 'name' && data.cell.section === 'body') {
+          const rowData = tableRows[data.row.index];
+          if (rowData.productUrl) {
+            // Add clickable link
+            doc.link(
+              data.cell.x, 
+              data.cell.y, 
+              data.cell.width, 
+              data.cell.height, 
+              { url: rowData.productUrl }
+            );
+            
+            // Add subtle visual indicator for clickable area
+            doc.setDrawColor(52, 152, 219);
+            doc.setLineWidth(0.2);
+            doc.line(
+              data.cell.x + 2, 
+              data.cell.y + data.cell.height - 1, 
+              data.cell.x + data.cell.width - 2, 
+              data.cell.y + data.cell.height - 1
+            );
+          }
+        }
       }
     });
     
-    // Footer with notes
+    // Enhanced footer
     const pageHeight = doc.internal.pageSize.height;
     doc.setFontSize(8);
+    doc.setTextColor(127, 140, 141);
     
-    // Add legend
-    let footerY = pageHeight - 35;
+    let footerY = pageHeight - 40;
+    
+    // Legend for custom pricing
     doc.text('* Custom pricing applied for specific products', 20, footerY);
     footerY += 8;
     
+    // Clickable products note
+    if (company?.website) {
+      doc.text('Click product names to visit our online store', 20, footerY);
+      footerY += 8;
+    }
+    
+    // Configuration notes
     if (pricingConfig.notes) {
       doc.text(`Notes: ${pricingConfig.notes}`, 20, footerY);
       footerY += 8;
     }
     
+    // Terms and conditions
     if (company?.terms) {
       doc.text(`Terms: ${company.terms}`, 20, footerY);
     }
     
+    // Add footer line
+    doc.setDrawColor(189, 195, 199);
+    doc.setLineWidth(0.5);
+    doc.line(20, pageHeight - 15, 190, pageHeight - 15);
+    
+    // Generation info
+    doc.setFontSize(7);
+    doc.text(
+      `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 
+      20, 
+      pageHeight - 8
+    );
+    
     const pdfBuffer = doc.output('arraybuffer');
     
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="custom-price-list-${Date.now()}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="enhanced-price-list-${Date.now()}.pdf"`);
     res.setHeader('Content-Length', pdfBuffer.byteLength);
     res.end(Buffer.from(pdfBuffer));
     
-    console.log('✅ Flexible PDF generated successfully');
+    console.log('✅ Enhanced PDF with clickable links generated successfully');
     
   } catch (error) {
-    console.error('❌ Flexible PDF generation error:', error);
+    console.error('❌ Enhanced PDF generation error:', error);
     res.status(500).json({
       success: false,
-      message: 'Flexible PDF generation failed',
+      message: 'Enhanced PDF generation failed',
       error: error.message
     });
   }
 });
-
 // API endpoint to save pricing configurations
 app.post('/api/pricing-configs/save', async (req, res) => {
   try {
