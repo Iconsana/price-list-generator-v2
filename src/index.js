@@ -286,16 +286,6 @@ class ShopifyService {
 // Create Shopify service instance
 const shopifyService = new ShopifyService();
 
-// Shopify API configuration
-const shopify = shopifyApi({
-  apiKey: process.env.SHOPIFY_API_KEY,
-  apiSecretKey: process.env.SHOPIFY_API_SECRET,
-  scopes: ['read_products', 'write_products'], // Updated scopes
-  hostName: process.env.APP_URL?.replace('https://', '') || 'localhost',
-  apiVersion: '2025-01',
-  isEmbeddedApp: true,
-});
-
 // ===========================================
 // FLEXIBLE PRICING FUNCTIONS
 // ===========================================
