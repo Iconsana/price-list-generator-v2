@@ -28,6 +28,13 @@ class ShopifyService {
     this.apiVersion = '2024-07';
   }
 
+// Flexible pricing calculator - user-defined discounts
+function calculateFlexiblePricing(basePrice, tierConfig) {
+  // tierConfig example: { discountPercent: 15, customPrices: { productId: customPrice } }
+  const discountMultiplier = (100 - (tierConfig.discountPercent || 0)) / 100;
+  return parseFloat(basePrice) * discountMultiplier;
+}
+  
 // Shopify API configuration
 const shopify = shopifyApi({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -703,23 +710,139 @@ app.get('/api/shopify/test-enhanced', async (req, res) => {
   }
 });
 
-// Simple PDF generation endpoint
-app.post('/api/price-lists/generate-pdf', (req, res) => {
+app.post('/api/price-lists/generate-pdf-flexible', async (req, res) => {
   try {
-    const { title, currency, products, company } = req.body;
+    const { 
+      title, 
+      currency, 
+      products, 
+      company, 
+      pricingConfig = {},
+      customPrices = {} // Individual product price overrides
+    } = req.body;
     
-    // For now, just return success - we'll implement actual PDF generation later
-    res.json({
-      success: true,
-      message: 'PDF generation successful!',
-      downloadUrl: '/api/test-pdf',
-      fileName: 'price-list-' + Date.now() + '.html',
-      note: 'This is a mock response - full PDF generation will be implemented next'
+    console.log('📄 Generating flexible PDF with user-defined pricing');
+    
+    // Import jsPDF
+    const { jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
+    
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(24);
+    doc.setFont(undefined, 'bold');
+    doc.text(company?.name || 'Your Company', 20, 30);
+    
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'normal');
+    doc.text(title || 'Custom Price List', 20, 45);
+    
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 55);
+    
+    // Show pricing configuration used
+    if (pricingConfig.tierName) {
+      doc.text(`Pricing Tier: ${pricingConfig.tierName}`, 120, 55);
+    }
+    if (pricingConfig.discountPercent) {
+      doc.text(`Base Discount: ${pricingConfig.discountPercent}%`, 120, 65);
+    }
+    
+    // Company info
+    let yPos = 75;
+    if (company?.email) doc.text(`📧 ${company.email}`, 20, yPos), yPos += 8;
+    if (company?.phone) doc.text(`📞 ${company.phone}`, 120, yPos - 8);
+    if (company?.website) doc.text(`🌐 ${company.website}`, 20, yPos), yPos += 15;
+    
+    // Table with flexible pricing
+    const tableColumns = [
+      { header: 'Product Name', dataKey: 'name' },
+      { header: 'Vendor', dataKey: 'vendor' },
+      { header: 'Base Price', dataKey: 'basePrice' },
+      { header: 'Your Price', dataKey: 'finalPrice' },
+      { header: 'Savings', dataKey: 'savings' },
+      { header: 'Stock', dataKey: 'stock' }
+    ];
+    
+    const tableRows = (products || []).map(product => {
+      const variant = product.variants && product.variants[0] ? product.variants[0] : {};
+      const basePrice = variant.price || 0;
+      
+      // Check if there's a custom price override for this specific product
+      const hasCustomPrice = customPrices[product.id] !== undefined;
+      let finalPrice;
+      
+      if (hasCustomPrice) {
+        // Use the manually set price
+        finalPrice = parseFloat(customPrices[product.id]);
+      } else {
+        // Use the tier discount percentage
+        finalPrice = calculateFlexiblePricing(basePrice, pricingConfig);
+      }
+      
+      const savings = basePrice - finalPrice;
+      const savingsPercent = basePrice > 0 ? ((savings / basePrice) * 100).toFixed(1) : '0';
+      
+      return {
+        name: product.title?.substring(0, 30) + (product.title?.length > 30 ? '...' : '') || 'Unknown',
+        vendor: product.vendor || 'Unknown',
+        basePrice: `R ${basePrice.toFixed(2)}`,
+        finalPrice: `R ${finalPrice.toFixed(2)}` + (hasCustomPrice ? ' *' : ''),
+        savings: savings > 0 ? `-${savingsPercent}%` : '0%',
+        stock: variant.inventoryQuantity > 0 ? '✅' : '❌'
+      };
     });
+    
+    doc.autoTable({
+      columns: tableColumns,
+      body: tableRows,
+      startY: yPos,
+      theme: 'striped',
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [52, 152, 219], textColor: [255, 255, 255] },
+      columnStyles: {
+        0: { cellWidth: 45 }, // Product name
+        1: { cellWidth: 25 }, // Vendor
+        2: { cellWidth: 25, halign: 'right' }, // Base price
+        3: { cellWidth: 25, halign: 'right', fillColor: [240, 248, 255] }, // Final price
+        4: { cellWidth: 20, halign: 'center' }, // Savings
+        5: { cellWidth: 15, halign: 'center' } // Stock
+      }
+    });
+    
+    // Footer with notes
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setFontSize(8);
+    
+    // Add legend
+    let footerY = pageHeight - 35;
+    doc.text('* Custom pricing applied for specific products', 20, footerY);
+    footerY += 8;
+    
+    if (pricingConfig.notes) {
+      doc.text(`Notes: ${pricingConfig.notes}`, 20, footerY);
+      footerY += 8;
+    }
+    
+    if (company?.terms) {
+      doc.text(`Terms: ${company.terms}`, 20, footerY);
+    }
+    
+    const pdfBuffer = doc.output('arraybuffer');
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="custom-price-list-${Date.now()}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.byteLength);
+    res.end(Buffer.from(pdfBuffer));
+    
+    console.log('✅ Flexible PDF generated successfully');
+    
   } catch (error) {
+    console.error('❌ Flexible PDF generation error:', error);
     res.status(500).json({
       success: false,
-      message: 'PDF generation failed',
+      message: 'Flexible PDF generation failed',
       error: error.message
     });
   }
@@ -738,6 +861,156 @@ app.get('/api/test-pdf', (req, res) => {
     </body>
     </html>
   `);
+});
+
+// API endpoint to save pricing configurations
+app.post('/api/pricing-configs/save', async (req, res) => {
+  try {
+    const { 
+      configName, 
+      tierName, 
+      discountPercent, 
+      customPrices, 
+      notes,
+      shopDomain 
+    } = req.body;
+    
+    // In a real app, you'd save this to a database
+    // For now, we'll just return the config
+    const pricingConfig = {
+      id: Date.now(),
+      configName: configName || `${tierName} Pricing`,
+      tierName,
+      discountPercent: parseFloat(discountPercent) || 0,
+      customPrices: customPrices || {},
+      notes: notes || '',
+      shopDomain,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    console.log('💾 Saving pricing config:', pricingConfig.configName);
+    
+    res.json({
+      success: true,
+      message: 'Pricing configuration saved successfully',
+      config: pricingConfig
+    });
+    
+  } catch (error) {
+    console.error('❌ Error saving pricing config:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save pricing configuration',
+      error: error.message
+    });
+  }
+});
+
+// API endpoint to load saved pricing configurations
+app.get('/api/pricing-configs', async (req, res) => {
+  try {
+    const { shopDomain } = req.query;
+    
+    // In a real app, you'd fetch from database
+    // For now, return sample configs
+    const sampleConfigs = [
+      {
+        id: 1,
+        configName: 'Standard Wholesale',
+        tierName: 'Wholesale',
+        discountPercent: 15,
+        customPrices: {},
+        notes: 'Standard wholesale pricing for regular customers'
+      },
+      {
+        id: 2,
+        configName: 'Premium Installer',
+        tierName: 'Installer',
+        discountPercent: 25,
+        customPrices: {},
+        notes: 'Premium pricing for high-volume installers'
+      },
+      {
+        id: 3,
+        configName: 'VIP Distributor',
+        tierName: 'Distributor',
+        discountPercent: 30,
+        customPrices: {},
+        notes: 'Special pricing for key distribution partners'
+      }
+    ];
+    
+    res.json({
+      success: true,
+      configs: sampleConfigs,
+      message: 'Pricing configurations loaded'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error loading pricing configs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load pricing configurations',
+      error: error.message
+    });
+  }
+});
+
+// API endpoint for real-time price calculation
+app.post('/api/calculate-pricing', async (req, res) => {
+  try {
+    const { products, pricingConfig, customPrices = {} } = req.body;
+    
+    const calculatedProducts = products.map(product => {
+      const variant = product.variants && product.variants[0] ? product.variants[0] : {};
+      const basePrice = variant.price || 0;
+      
+      let finalPrice;
+      let priceSource;
+      
+      if (customPrices[product.id] !== undefined) {
+        finalPrice = parseFloat(customPrices[product.id]);
+        priceSource = 'custom';
+      } else {
+        finalPrice = calculateFlexiblePricing(basePrice, pricingConfig);
+        priceSource = 'tier';
+      }
+      
+      const savings = basePrice - finalPrice;
+      const savingsPercent = basePrice > 0 ? ((savings / basePrice) * 100) : 0;
+      
+      return {
+        ...product,
+        pricing: {
+          basePrice,
+          finalPrice,
+          savings,
+          savingsPercent: parseFloat(savingsPercent.toFixed(2)),
+          priceSource
+        }
+      };
+    });
+    
+    res.json({
+      success: true,
+      products: calculatedProducts,
+      summary: {
+        totalProducts: calculatedProducts.length,
+        customPriced: calculatedProducts.filter(p => p.pricing.priceSource === 'custom').length,
+        tierPriced: calculatedProducts.filter(p => p.pricing.priceSource === 'tier').length,
+        averageSavings: calculatedProducts.reduce((acc, p) => acc + p.pricing.savingsPercent, 0) / calculatedProducts.length
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error calculating pricing:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to calculate pricing',
+      error: error.message
+    });
+  }
 });
 
 // ===========================================
@@ -847,6 +1120,7 @@ app.get('/', (req, res) => {
 
 // Create price list page (Enhanced version with Shopify integration)
 
+// Enhanced Create Price List Route - Replace the existing one in your index.js
 app.get('/create-price-list', (req, res) => {
   const createHTML = `
     <!DOCTYPE html>
@@ -883,7 +1157,7 @@ app.get('/create-price-list', (req, res) => {
         <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">Create New Price List</h1>
-                <p class="mt-2 text-gray-600">Build professional price lists from your Shopify products</p>
+                <p class="mt-2 text-gray-600">Build professional price lists with flexible pricing for different customer tiers</p>
             </div>
 
             <!-- Status Messages -->
@@ -892,61 +1166,164 @@ app.get('/create-price-list', (req, res) => {
             <!-- Main Form -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Left Panel - Configuration -->
-                <div class="lg:col-span-1">
-                    <div class="bg-white rounded-lg shadow-md p-6 space-y-6">
-                        <!-- Company Information -->
-                        <div>
-                            <h3 class="text-lg font-semibold mb-4">Company Information</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                                    <input type="text" id="companyName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your Company Name">
+                <div class="lg:col-span-1 space-y-6">
+                    
+                    <!-- Company Information -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4">🏢 Company Information</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                                <input type="text" id="companyName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your Company Name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" id="companyEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="sales@company.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                <input type="tel" id="companyPhone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="+27 11 123 4567">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                                <input type="url" id="companyWebsite" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://yourstore.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Flexible Pricing Configuration -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4">🎯 Flexible Pricing Configuration</h3>
+                        
+                        <!-- Configuration Name -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Configuration Name</label>
+                            <input type="text" id="configName" placeholder="e.g., Premium Installer Pricing" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <!-- Customer Tier Selection with Custom Discounts -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Customer Tier & Discount</label>
+                            <div class="grid grid-cols-1 gap-3">
+                                
+                                <!-- Retail -->
+                                <div class="border rounded-lg p-3 hover:border-blue-300 cursor-pointer tier-option border-blue-500 bg-blue-50" data-tier="retail">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="font-medium">Retail Customer</span>
+                                        <input type="radio" name="tierType" value="retail" class="tier-radio" checked>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-sm text-gray-600">Discount:</span>
+                                        <input type="number" id="retailDiscount" min="0" max="100" step="0.1" value="0" 
+                                               class="w-16 px-2 py-1 border border-gray-300 rounded text-sm discount-input">
+                                        <span class="text-sm text-gray-600">%</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                    <input type="email" id="companyEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="sales@company.com">
+                                
+                                <!-- Wholesale -->
+                                <div class="border rounded-lg p-3 hover:border-blue-300 cursor-pointer tier-option border-gray-300" data-tier="wholesale">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="font-medium">Wholesale</span>
+                                        <input type="radio" name="tierType" value="wholesale" class="tier-radio">
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-sm text-gray-600">Discount:</span>
+                                        <input type="number" id="wholesaleDiscount" min="0" max="100" step="0.1" value="15" 
+                                               class="w-16 px-2 py-1 border border-gray-300 rounded text-sm discount-input">
+                                        <span class="text-sm text-gray-600">%</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                                    <input type="tel" id="companyPhone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="+27 11 123 4567">
+                                
+                                <!-- Installer -->
+                                <div class="border rounded-lg p-3 hover:border-blue-300 cursor-pointer tier-option border-gray-300" data-tier="installer">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="font-medium">Installer</span>
+                                        <input type="radio" name="tierType" value="installer" class="tier-radio">
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-sm text-gray-600">Discount:</span>
+                                        <input type="number" id="installerDiscount" min="0" max="100" step="0.1" value="20" 
+                                               class="w-16 px-2 py-1 border border-gray-300 rounded text-sm discount-input">
+                                        <span class="text-sm text-gray-600">%</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                                    <input type="url" id="companyWebsite" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://yourstore.com">
+                                
+                                <!-- Distributor -->
+                                <div class="border rounded-lg p-3 hover:border-blue-300 cursor-pointer tier-option border-gray-300" data-tier="distributor">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="font-medium">Distributor</span>
+                                        <input type="radio" name="tierType" value="distributor" class="tier-radio">
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-sm text-gray-600">Discount:</span>
+                                        <input type="number" id="distributorDiscount" min="0" max="100" step="0.1" value="25" 
+                                               class="w-16 px-2 py-1 border border-gray-300 rounded text-sm discount-input">
+                                        <span class="text-sm text-gray-600">%</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Price List Settings -->
+                        
+                        <!-- Configuration Notes -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                            <textarea id="configNotes" rows="2" placeholder="e.g., Special pricing for high-volume installer with 3-year contract" 
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="grid grid-cols-1 gap-2 mb-4">
+                            <button id="applyTierPricingBtn" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                                Apply Tier Pricing
+                            </button>
+                            <button id="savePricingConfigBtn" class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm">
+                                Save Configuration
+                            </button>
+                        </div>
+                        
+                        <!-- Saved Configurations -->
                         <div>
-                            <h3 class="text-lg font-semibold mb-4">Price List Settings</h3>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">List Title</label>
-                                    <input type="text" id="listTitle" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Professional Product Catalog">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                                    <select id="currency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="ZAR">ZAR (South African Rand)</option>
-                                        <option value="USD">USD (US Dollar)</option>
-                                        <option value="EUR">EUR (Euro)</option>
-                                        <option value="GBP">GBP (British Pound)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions</label>
-                                    <textarea id="terms" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Payment terms are COD. T's & C's Apply."></textarea>
-                                </div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Load Saved Configuration</label>
+                            <select id="savedConfigsSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md mb-2">
+                                <option value="">Choose a saved configuration...</option>
+                            </select>
+                            <button id="loadSelectedConfigBtn" class="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm">
+                                Load Selected Config
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Price List Settings -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4">📄 Price List Settings</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">List Title</label>
+                                <input type="text" id="listTitle" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Professional Product Catalog">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                                <select id="currency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="ZAR">ZAR (South African Rand)</option>
+                                    <option value="USD">USD (US Dollar)</option>
+                                    <option value="EUR">EUR (Euro)</option>
+                                    <option value="GBP">GBP (British Pound)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions</label>
+                                <textarea id="terms" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Payment terms are COD. T's & C's Apply."></textarea>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Connection Status -->
-                        <div id="connectionStatus" class="p-4 rounded-lg bg-gray-50">
+                    <!-- Connection Status & Actions -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <div id="connectionStatus" class="p-4 rounded-lg bg-gray-50 mb-4">
                             <div class="text-sm text-gray-600">Shopify Connection: <span id="connectionText">Not tested</span></div>
                         </div>
 
-                        <!-- Actions -->
                         <div class="space-y-3">
                             <button id="testConnectionBtn" class="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors">
                                 Test Shopify Connection
@@ -954,14 +1331,14 @@ app.get('/create-price-list', (req, res) => {
                             <button id="loadProductsBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
                                 Load Shopify Products
                             </button>
-                            <button id="generatePdfBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors" disabled>
-                                Generate PDF Preview
+                            <button id="generateFlexiblePdfBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors" disabled>
+                                Generate Flexible PDF
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Panel - Product Selection -->
+                <!-- Right Panel - Enhanced Product Selection -->
                 <div class="lg:col-span-2">
                     <div class="bg-white rounded-lg shadow-md">
                         <!-- Search and Filters -->
@@ -999,25 +1376,66 @@ app.get('/create-price-list', (req, res) => {
                                             Clear Selection
                                         </button>
                                     </div>
+                                    <div class="flex gap-2">
+                                        <button id="resetAllPricesBtn" class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-sm hover:bg-yellow-200">
+                                            Reset All to Tier Pricing
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Product List -->
+                        <!-- Enhanced Product List with Flexible Pricing -->
                         <div class="p-6">
                             <div id="loadingState" class="text-center py-12">
                                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                                 <p class="text-gray-600">Click "Load Shopify Products" to begin</p>
                             </div>
                             
-                            <div id="productList" class="hidden space-y-3 max-h-96 overflow-y-auto">
-                                <!-- Products will be populated here -->
+                            <!-- Enhanced Product Table -->
+                            <div id="productTableSection" class="hidden">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full border-collapse">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border">Select</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border">Product</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border">Base Price</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border">Tier Price</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border">Custom Price</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border">Final Price</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border">Savings</th>
+                                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border">Stock</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="enhancedProductList" class="divide-y divide-gray-200">
+                                            <!-- Enhanced products will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                             
-                            <div id="selectedSummary" class="hidden mt-6 p-4 bg-blue-50 rounded-lg">
-                                <p class="text-blue-800 font-medium">
-                                    <span id="selectedCount">0</span> products selected for price list
-                                </p>
+                            <!-- Pricing Summary -->
+                            <div id="pricingSummary" class="hidden mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <h4 class="font-medium text-blue-900 mb-3">📊 Pricing Summary</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-blue-600 font-medium">Selected Products:</span>
+                                        <span id="summarySelectedCount" class="ml-1 font-semibold">0</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-blue-600 font-medium">Tier Priced:</span>
+                                        <span id="summaryTierCount" class="ml-1 font-semibold">0</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-blue-600 font-medium">Custom Priced:</span>
+                                        <span id="summaryCustomCount" class="ml-1 font-semibold">0</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-blue-600 font-medium">Avg. Savings:</span>
+                                        <span id="summaryAvgSavings" class="ml-1 font-semibold">0%</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1026,21 +1444,32 @@ app.get('/create-price-list', (req, res) => {
         </main>
 
         <script>
-            // State management
+            // Enhanced State Management
             let state = {
                 products: [],
-                selectedProducts: [],
                 filteredProducts: [],
+                selectedProducts: new Set(),
                 isLoading: false,
                 allVendors: new Set(),
-                allTypes: new Set()
+                allTypes: new Set(),
+                // Enhanced pricing state
+                selectedTier: 'retail',
+                tierDiscounts: {
+                    retail: 0,
+                    wholesale: 15,
+                    installer: 20,
+                    distributor: 25
+                },
+                customPrices: {}, // { productId: customPrice }
+                calculatedProducts: [] // Products with calculated pricing
             };
 
             // DOM elements
             const elements = {
+                // Existing elements
                 testConnectionBtn: document.getElementById('testConnectionBtn'),
                 loadProductsBtn: document.getElementById('loadProductsBtn'),
-                generatePdfBtn: document.getElementById('generatePdfBtn'),
+                generateFlexiblePdfBtn: document.getElementById('generateFlexiblePdfBtn'),
                 searchProducts: document.getElementById('searchProducts'),
                 searchBtn: document.getElementById('searchBtn'),
                 vendorFilter: document.getElementById('vendorFilter'),
@@ -1048,14 +1477,70 @@ app.get('/create-price-list', (req, res) => {
                 clearFiltersBtn: document.getElementById('clearFiltersBtn'),
                 selectAllBtn: document.getElementById('selectAllBtn'),
                 clearSelectionBtn: document.getElementById('clearSelectionBtn'),
-                productList: document.getElementById('productList'),
+                enhancedProductList: document.getElementById('enhancedProductList'),
                 loadingState: document.getElementById('loadingState'),
-                selectedSummary: document.getElementById('selectedSummary'),
-                selectedCount: document.getElementById('selectedCount'),
+                productTableSection: document.getElementById('productTableSection'),
                 statusMessages: document.getElementById('statusMessages'),
                 connectionStatus: document.getElementById('connectionStatus'),
-                connectionText: document.getElementById('connectionText')
+                connectionText: document.getElementById('connectionText'),
+                pricingSummary: document.getElementById('pricingSummary'),
+                
+                // Enhanced pricing elements
+                applyTierPricingBtn: document.getElementById('applyTierPricingBtn'),
+                savePricingConfigBtn: document.getElementById('savePricingConfigBtn'),
+                loadSelectedConfigBtn: document.getElementById('loadSelectedConfigBtn'),
+                savedConfigsSelect: document.getElementById('savedConfigsSelect'),
+                resetAllPricesBtn: document.getElementById('resetAllPricesBtn'),
+                
+                // Summary elements
+                summarySelectedCount: document.getElementById('summarySelectedCount'),
+                summaryTierCount: document.getElementById('summaryTierCount'),
+                summaryCustomCount: document.getElementById('summaryCustomCount'),
+                summaryAvgSavings: document.getElementById('summaryAvgSavings')
             };
+
+            // Initialize tier selection
+            document.querySelectorAll('.tier-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const tier = this.dataset.tier;
+                    selectTier(tier);
+                });
+            });
+
+            // Initialize discount input listeners
+            document.querySelectorAll('.discount-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    const tier = this.id.replace('Discount', '');
+                    state.tierDiscounts[tier] = parseFloat(this.value) || 0;
+                    if (state.selectedTier === tier) {
+                        recalculateAllPricing();
+                    }
+                });
+            });
+
+            function selectTier(tier) {
+                state.selectedTier = tier;
+                
+                // Update UI
+                document.querySelectorAll('.tier-option').forEach(opt => {
+                    opt.classList.remove('border-blue-500', 'bg-blue-50');
+                    opt.classList.add('border-gray-300');
+                });
+                
+                const selectedOption = document.querySelector(\`[data-tier="\${tier}"]\`);
+                selectedOption.classList.add('border-blue-500', 'bg-blue-50');
+                selectedOption.classList.remove('border-gray-300');
+                
+                // Check the radio button
+                document.querySelector(\`input[value="\${tier}"]\`).checked = true;
+                
+                // Update tier discount from input
+                const discountInput = document.getElementById(\`\${tier}Discount\`);
+                state.tierDiscounts[tier] = parseFloat(discountInput.value) || 0;
+                
+                // Recalculate all pricing
+                recalculateAllPricing();
+            }
 
             // Enhanced Test Shopify connection
             elements.testConnectionBtn.addEventListener('click', async () => {
@@ -1064,16 +1549,14 @@ app.get('/create-price-list', (req, res) => {
                 btn.textContent = 'Testing...';
                 
                 try {
-                    // First try the debug endpoint which we know works
                     let response = await fetch('/api/shopify/debug');
                     let data = await response.json();
                     
                     if (data.success) {
-                        elements.connectionText.textContent = 'Connected to ' + data.shop.name + '';
+                        elements.connectionText.textContent = 'Connected to ' + data.shop.name;
                         elements.connectionStatus.className = 'p-4 rounded-lg bg-green-50';
                         showSuccess('Connected to ' + data.shop.name + ' successfully!');
                         
-                        // Also test the products endpoint
                         try {
                             const productsResponse = await fetch('/api/shopify/products?limit=1');
                             const productsData = await productsResponse.json();
@@ -1088,7 +1571,6 @@ app.get('/create-price-list', (req, res) => {
                         }
                         
                     } else {
-                        // Fallback to original test endpoint
                         response = await fetch('/api/shopify/test');
                         data = await response.json();
                         
@@ -1117,6 +1599,83 @@ app.get('/create-price-list', (req, res) => {
                 await loadProducts();
             });
 
+            // Apply tier pricing
+            elements.applyTierPricingBtn.addEventListener('click', async () => {
+                try {
+                    const currentTier = state.selectedTier;
+                    const discountInput = document.getElementById(\`\${currentTier}Discount\`);
+                    const discountPercent = parseFloat(discountInput.value) || 0;
+                    
+                    state.tierDiscounts[currentTier] = discountPercent;
+                    
+                    await recalculateAllPricing();
+                    
+                    showSuccess(\`Applied \${discountPercent}% \${currentTier} discount to all products\`);
+                } catch (error) {
+                    showError('Error applying tier pricing: ' + error.message);
+                }
+            });
+
+            // Save pricing configuration
+            elements.savePricingConfigBtn.addEventListener('click', async () => {
+                try {
+                    const configName = document.getElementById('configName').value || 
+                                      \`\${state.selectedTier} Configuration\`;
+                    
+                    const currentTier = state.selectedTier;
+                    const discountPercent = state.tierDiscounts[currentTier];
+                    const notes = document.getElementById('configNotes').value;
+                    
+                    const response = await fetch('/api/pricing-configs/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            configName,
+                            tierName: currentTier,
+                            discountPercent,
+                            customPrices: state.customPrices,
+                            notes
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showSuccess('Pricing configuration saved: ' + configName);
+                        loadSavedConfigs();
+                    } else {
+                        showError('Failed to save configuration: ' + result.message);
+                    }
+                } catch (error) {
+                    showError('Error saving configuration: ' + error.message);
+                }
+            });
+
+            // Load saved configurations
+            elements.loadSelectedConfigBtn.addEventListener('click', async () => {
+                const selectedValue = elements.savedConfigsSelect.value;
+                if (!selectedValue) {
+                    showError('Please select a configuration to load');
+                    return;
+                }
+                
+                try {
+                    // In a real implementation, you'd load from the backend
+                    // For now, simulate loading
+                    const configId = parseInt(selectedValue);
+                    showSuccess('Configuration loaded successfully');
+                } catch (error) {
+                    showError('Error loading configuration: ' + error.message);
+                }
+            });
+
+            // Reset all prices to tier pricing
+            elements.resetAllPricesBtn.addEventListener('click', () => {
+                state.customPrices = {};
+                recalculateAllPricing();
+                showSuccess('All prices reset to tier pricing');
+            });
+
             // Search functionality
             elements.searchBtn.addEventListener('click', async () => {
                 const searchTerm = elements.searchProducts.value.trim();
@@ -1127,7 +1686,6 @@ app.get('/create-price-list', (req, res) => {
                 }
             });
 
-            // Search on Enter key
             elements.searchProducts.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     elements.searchBtn.click();
@@ -1148,85 +1706,36 @@ app.get('/create-price-list', (req, res) => {
             elements.selectAllBtn.addEventListener('click', () => {
                 const visibleProducts = state.filteredProducts;
                 const allSelected = visibleProducts.every(product => 
-                    state.selectedProducts.some(p => p.id === product.id)
+                    state.selectedProducts.has(product.id)
                 );
 
                 if (allSelected) {
-                    // Deselect all visible
-                    state.selectedProducts = state.selectedProducts.filter(p => 
-                        !visibleProducts.some(vp => vp.id === p.id)
-                    );
-                } else {
-                    // Select all visible
                     visibleProducts.forEach(product => {
-                        if (!state.selectedProducts.some(p => p.id === product.id)) {
-                            state.selectedProducts.push(product);
-                        }
+                        state.selectedProducts.delete(product.id);
+                    });
+                } else {
+                    visibleProducts.forEach(product => {
+                        state.selectedProducts.add(product.id);
                     });
                 }
                 
-                renderProducts();
-                updateSelectedSummary();
+                renderEnhancedProductList();
+                updatePricingSummary();
             });
 
             elements.clearSelectionBtn.addEventListener('click', () => {
-                state.selectedProducts = [];
-                renderProducts();
-                updateSelectedSummary();
+                state.selectedProducts.clear();
+                renderEnhancedProductList();
+                updatePricingSummary();
             });
 
-            // Generate PDF
-            elements.generatePdfBtn.addEventListener('click', async () => {
-                if (state.selectedProducts.length === 0) {
-                    showError('Please select at least one product');
-                    return;
-                }
-
-                try {
-                    elements.generatePdfBtn.disabled = true;
-                    elements.generatePdfBtn.textContent = 'Generating PDF...';
-                    
-                    const companyInfo = {
-                        name: document.getElementById('companyName').value || 'Your Company',
-                        email: document.getElementById('companyEmail').value || 'sales@company.com',
-                        phone: document.getElementById('companyPhone').value || '+27 11 123 4567',
-                        website: document.getElementById('companyWebsite').value || 'https://yourstore.com',
-                        terms: document.getElementById('terms').value || 'Payment terms are COD. T\\'s & C\\'s Apply.'
-                    };
-
-                    const priceListData = {
-                        title: document.getElementById('listTitle').value || 'Product Catalog',
-                        currency: document.getElementById('currency').value || 'ZAR',
-                        products: state.selectedProducts,
-                        company: companyInfo,
-                        timestamp: new Date().toISOString()
-                    };
-
-                    const response = await fetch('/api/price-lists/generate-pdf', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(priceListData)
-                    });
-
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        showSuccess('PDF generated successfully!');
-                        if (result.downloadUrl) {
-                            window.open(result.downloadUrl, '_blank');
-                        }
-                    } else {
-                        showError('Failed to generate PDF: ' + (result.message || 'Unknown error'));
-                    }
-                } catch (error) {
-                    showError('Error generating PDF: ' + error.message);
-                } finally {
-                    elements.generatePdfBtn.disabled = false;
-                    elements.generatePdfBtn.textContent = 'Generate PDF Preview';
-                }
+            // Generate flexible PDF
+            elements.generateFlexiblePdfBtn.addEventListener('click', async () => {
+                await generateFlexiblePDF();
             });
 
-            // Load products function
+            // Core Functions
+
             async function loadProducts(searchTerm = null) {
                 try {
                     showLoading('Loading products from Shopify...');
@@ -1244,10 +1753,8 @@ app.get('/create-price-list', (req, res) => {
                         state.products = data.products || [];
                         state.filteredProducts = [...state.products];
                         
-                        // Build filter options
                         buildFilterOptions();
-                        
-                        // Apply any existing filters
+                        await recalculateAllPricing();
                         applyFilters();
                         
                         showSuccess('Loaded ' + state.products.length + ' products from Shopify');
@@ -1266,19 +1773,87 @@ app.get('/create-price-list', (req, res) => {
                 }
             }
 
-            // Build filter options
+            async function recalculateAllPricing() {
+                if (state.products.length === 0) return;
+                
+                try {
+                    const currentTier = state.selectedTier;
+                    const pricingConfig = {
+                        tierName: currentTier,
+                        discountPercent: state.tierDiscounts[currentTier]
+                    };
+                    
+                    const response = await fetch('/api/calculate-pricing', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            products: state.products,
+                            pricingConfig,
+                            customPrices: state.customPrices
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        state.calculatedProducts = result.products;
+                        renderEnhancedProductList();
+                        updatePricingSummary(result.summary);
+                    }
+                } catch (error) {
+                    console.error('Error recalculating pricing:', error);
+                    // Fallback to client-side calculation
+                    calculatePricingClientSide();
+                }
+            }
+
+            function calculatePricingClientSide() {
+                const currentTier = state.selectedTier;
+                const tierDiscount = state.tierDiscounts[currentTier] / 100;
+                
+                state.calculatedProducts = state.products.map(product => {
+                    const variant = product.variants && product.variants[0] ? product.variants[0] : {};
+                    const basePrice = variant.price || 0;
+                    
+                    let finalPrice;
+                    let priceSource;
+                    
+                    if (state.customPrices[product.id] !== undefined) {
+                        finalPrice = parseFloat(state.customPrices[product.id]);
+                        priceSource = 'custom';
+                    } else {
+                        finalPrice = basePrice * (1 - tierDiscount);
+                        priceSource = 'tier';
+                    }
+                    
+                    const savings = basePrice - finalPrice;
+                    const savingsPercent = basePrice > 0 ? ((savings / basePrice) * 100) : 0;
+                    
+                    return {
+                        ...product,
+                        pricing: {
+                            basePrice,
+                            finalPrice,
+                            savings,
+                            savingsPercent: parseFloat(savingsPercent.toFixed(2)),
+                            priceSource
+                        }
+                    };
+                });
+                
+                renderEnhancedProductList();
+                updatePricingSummary();
+            }
+
             function buildFilterOptions() {
-                // Reset filter sets
                 state.allVendors.clear();
                 state.allTypes.clear();
                 
-                // Collect unique vendors and types
                 state.products.forEach(product => {
                     if (product.vendor) state.allVendors.add(product.vendor);
                     if (product.productType) state.allTypes.add(product.productType);
                 });
                 
-                // Populate vendor filter
                 elements.vendorFilter.innerHTML = '<option value="">All Vendors</option>';
                 Array.from(state.allVendors).sort().forEach(vendor => {
                     const option = document.createElement('option');
@@ -1287,7 +1862,6 @@ app.get('/create-price-list', (req, res) => {
                     elements.vendorFilter.appendChild(option);
                 });
                 
-                // Populate type filter
                 elements.typeFilter.innerHTML = '<option value="">All Types</option>';
                 Array.from(state.allTypes).sort().forEach(type => {
                     const option = document.createElement('option');
@@ -1297,13 +1871,12 @@ app.get('/create-price-list', (req, res) => {
                 });
             }
 
-            // Apply filters
             function applyFilters() {
                 const vendorFilter = elements.vendorFilter.value;
                 const typeFilter = elements.typeFilter.value;
                 const searchTerm = elements.searchProducts.value.toLowerCase();
                 
-                state.filteredProducts = state.products.filter(product => {
+                state.filteredProducts = state.calculatedProducts.filter(product => {
                     const matchesVendor = !vendorFilter || product.vendor === vendorFilter;
                     const matchesType = !typeFilter || product.productType === typeFilter;
                     const matchesSearch = !searchTerm || 
@@ -1314,99 +1887,216 @@ app.get('/create-price-list', (req, res) => {
                     return matchesVendor && matchesType && matchesSearch;
                 });
                 
-                renderProducts();
+                renderEnhancedProductList();
             }
 
-            // Render products
-            function renderProducts() {
+            function renderEnhancedProductList() {
+                if (!elements.enhancedProductList) return;
+                
                 if (state.filteredProducts.length === 0) {
-                    elements.productList.innerHTML = '<p class="text-gray-500 text-center py-8">No products found</p>';
-                    elements.productList.classList.remove('hidden');
+                    elements.enhancedProductList.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">No products found</td></tr>';
+                    elements.productTableSection.classList.remove('hidden');
                     elements.loadingState.classList.add('hidden');
                     return;
                 }
 
-                const html = state.filteredProducts.map(product => {
-                    const isSelected = state.selectedProducts.some(p => p.id === product.id);
+                elements.enhancedProductList.innerHTML = state.filteredProducts.map(product => {
                     const variant = product.variants && product.variants[0] ? product.variants[0] : {};
-                    const price = variant.price || 0;
-                    const image = product.featuredImage && product.featuredImage.url ? product.featuredImage.url : 'https://via.placeholder.com/64x64?text=No+Image';
+                    const isSelected = state.selectedProducts.has(product.id);
+                    const hasCustomPrice = state.customPrices[product.id] !== undefined;
+                    const pricing = product.pricing || {};
                     
-                    return [
-                        '<div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors ' + (isSelected ? 'bg-blue-50 border-blue-300' : '') + '">',
-                        '<div class="flex items-start space-x-4">',
-                        '<div class="flex-shrink-0">',
-                        '<input type="checkbox" class="product-checkbox mt-1" data-product-id="' + product.id + '"' + (isSelected ? ' checked' : '') + '>',
-                        '</div>',
-                        '<div class="flex-shrink-0">',
-                        '<img src="' + image + '" alt="' + product.title + '" class="w-16 h-16 object-cover rounded-md border" onerror="this.src=\\'https://via.placeholder.com/64x64?text=No+Image\\'">',
-                        '</div>',
-                        '<div class="flex-1 min-w-0">',
-                        '<h4 class="text-sm font-medium text-gray-900 truncate">' + product.title + '</h4>',
-                        '<p class="text-sm text-gray-500">' + (product.vendor || 'Unknown Vendor') + '</p>',
-                        '<p class="text-sm text-gray-500">' + (product.productType || 'Uncategorized') + '</p>',
-                        '<div class="mt-2">',
-                        '<span class="text-lg font-semibold text-gray-900">R ' + price.toFixed(2) + '</span>',
-                        (variant.sku ? '<span class="ml-2 text-xs text-gray-500">SKU: ' + variant.sku + '</span>' : ''),
-                        '</div>',
-                        '<div class="text-xs text-gray-400 mt-1">',
-                        'Stock: ' + (variant.inventoryQuantity || 0),
-                        '</div>',
-                        '</div>',
-                        '</div>',
-                        '</div>'
-                    ].join('');
+                    const tierPrice = pricing.basePrice * (1 - state.tierDiscounts[state.selectedTier] / 100);
+                    
+                    return \`
+                        <tr class="hover:bg-gray-50 \${isSelected ? 'bg-blue-50' : ''}">
+                            <td class="px-3 py-2 border">
+                                <input type="checkbox" \${isSelected ? 'checked' : ''} 
+                                       onchange="toggleProductSelection('\${product.id}')"
+                                       class="rounded border-gray-300 text-blue-600">
+                            </td>
+                            <td class="px-3 py-2 border">
+                                <div class="font-medium text-gray-900 text-sm">\${product.title?.substring(0, 30) || 'Unknown Product'}</div>
+                                <div class="text-xs text-gray-500">\${product.vendor || 'Unknown Vendor'}</div>
+                                <div class="text-xs text-gray-400">\${variant.sku || 'No SKU'}</div>
+                            </td>
+                            <td class="px-3 py-2 border text-sm text-gray-600">
+                                R \${(pricing.basePrice || 0).toFixed(2)}
+                            </td>
+                            <td class="px-3 py-2 border text-sm text-gray-600">
+                                R \${tierPrice.toFixed(2)}
+                            </td>
+                            <td class="px-3 py-2 border">
+                                <input type="number" step="0.01" min="0" 
+                                       value="\${hasCustomPrice ? state.customPrices[product.id].toFixed(2) : ''}"
+                                       placeholder="Override"
+                                       onchange="handleCustomPriceInput('\${product.id}', this.value)"
+                                       class="w-20 px-2 py-1 border border-gray-300 rounded text-xs \${hasCustomPrice ? 'border-blue-300 bg-blue-50' : ''}">
+                            </td>
+                            <td class="px-3 py-2 border">
+                                <span class="font-medium text-gray-900 text-sm">R \${(pricing.finalPrice || 0).toFixed(2)}</span>
+                                \${hasCustomPrice ? '<span class="text-blue-500 text-xs ml-1">*</span>' : ''}
+                            </td>
+                            <td class="px-3 py-2 border text-center">
+                                <span class="\${pricing.savingsPercent > 0 ? 'text-green-600' : 'text-gray-400'} text-xs font-medium">
+                                    \${pricing.savingsPercent > 0 ? '-' + pricing.savingsPercent.toFixed(1) + '%' : '0%'}
+                                </span>
+                            </td>
+                            <td class="px-3 py-2 border text-center">
+                                <span class="text-xs \${variant.inventoryQuantity > 0 ? 'text-green-600' : 'text-red-600'}">
+                                    \${variant.inventoryQuantity > 0 ? '✅' : '❌'}
+                                </span>
+                            </td>
+                        </tr>
+                    \`;
                 }).join('');
 
-                elements.productList.innerHTML = html;
-                elements.productList.classList.remove('hidden');
+                elements.productTableSection.classList.remove('hidden');
                 elements.loadingState.classList.add('hidden');
-
-                // Add event listeners to checkboxes
-                document.querySelectorAll('.product-checkbox').forEach(checkbox => {
-                    checkbox.addEventListener('change', handleProductSelection);
-                });
-
-                updateSelectedSummary();
+                updatePricingSummary();
             }
 
-            // Handle product selection
-            function handleProductSelection(e) {
-                const productId = e.target.dataset.productId;
-                const product = state.products.find(p => p.id === productId);
-                
-                if (e.target.checked) {
-                    if (!state.selectedProducts.some(p => p.id === productId)) {
-                        state.selectedProducts.push(product);
-                    }
+            function toggleProductSelection(productId) {
+                if (state.selectedProducts.has(productId)) {
+                    state.selectedProducts.delete(productId);
                 } else {
-                    state.selectedProducts = state.selectedProducts.filter(p => p.id !== productId);
+                    state.selectedProducts.add(productId);
+                }
+                renderEnhancedProductList();
+            }
+
+            function handleCustomPriceInput(productId, newPrice) {
+                if (newPrice === '' || newPrice === null) {
+                    delete state.customPrices[productId];
+                } else {
+                    state.customPrices[productId] = parseFloat(newPrice);
                 }
                 
-                updateSelectedSummary();
+                recalculateAllPricing();
             }
 
-            // Update selected summary
-            function updateSelectedSummary() {
-                elements.selectedCount.textContent = state.selectedProducts.length;
+            function updatePricingSummary(summary = null) {
+                const selectedCount = state.selectedProducts.size;
                 
-                if (state.selectedProducts.length > 0) {
-                    elements.selectedSummary.classList.remove('hidden');
-                    elements.generatePdfBtn.disabled = false;
+                if (selectedCount > 0) {
+                    elements.pricingSummary.classList.remove('hidden');
+                    elements.generateFlexiblePdfBtn.disabled = false;
+                    
+                    if (summary) {
+                        elements.summarySelectedCount.textContent = selectedCount;
+                        elements.summaryTierCount.textContent = summary.tierPriced || 0;
+                        elements.summaryCustomCount.textContent = summary.customPriced || 0;
+                        elements.summaryAvgSavings.textContent = (summary.averageSavings || 0).toFixed(1) + '%';
+                    } else {
+                        // Calculate summary client-side
+                        const selectedProducts = state.calculatedProducts.filter(p => state.selectedProducts.has(p.id));
+                        const customPriced = selectedProducts.filter(p => state.customPrices[p.id] !== undefined).length;
+                        const tierPriced = selectedCount - customPriced;
+                        const avgSavings = selectedProducts.reduce((acc, p) => acc + (p.pricing?.savingsPercent || 0), 0) / selectedCount;
+                        
+                        elements.summarySelectedCount.textContent = selectedCount;
+                        elements.summaryTierCount.textContent = tierPriced;
+                        elements.summaryCustomCount.textContent = customPriced;
+                        elements.summaryAvgSavings.textContent = avgSavings.toFixed(1) + '%';
+                    }
                 } else {
-                    elements.selectedSummary.classList.add('hidden');
-                    elements.generatePdfBtn.disabled = true;
+                    elements.pricingSummary.classList.add('hidden');
+                    elements.generateFlexiblePdfBtn.disabled = true;
+                }
+            }
+
+            async function generateFlexiblePDF() {
+                try {
+                    const selectedProductsArray = state.calculatedProducts.filter(p => 
+                        state.selectedProducts.has(p.id)
+                    );
+                    
+                    if (selectedProductsArray.length === 0) {
+                        showError('Please select at least one product');
+                        return;
+                    }
+                    
+                    elements.generateFlexiblePdfBtn.disabled = true;
+                    elements.generateFlexiblePdfBtn.textContent = 'Generating PDF...';
+                    
+                    const companyInfo = {
+                        name: document.getElementById('companyName').value || 'Your Company',
+                        email: document.getElementById('companyEmail').value || '',
+                        phone: document.getElementById('companyPhone').value || '',
+                        website: document.getElementById('companyWebsite').value || '',
+                        terms: document.getElementById('terms').value || ''
+                    };
+                    
+                    const pricingConfig = {
+                        tierName: state.selectedTier,
+                        discountPercent: state.tierDiscounts[state.selectedTier],
+                        notes: document.getElementById('configNotes').value
+                    };
+                    
+                    const response = await fetch('/api/price-lists/generate-pdf-flexible', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: document.getElementById('listTitle').value || 'Custom Price List',
+                            currency: document.getElementById('currency').value || 'ZAR',
+                            products: selectedProductsArray,
+                            company: companyInfo,
+                            pricingConfig,
+                            customPrices: state.customPrices
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = \`\${state.selectedTier}-price-list-\${Date.now()}.pdf\`;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        window.URL.revokeObjectURL(url);
+                        
+                        showSuccess('Flexible PDF generated and downloaded!');
+                    } else {
+                        const error = await response.json();
+                        showError('PDF generation failed: ' + error.message);
+                    }
+                } catch (error) {
+                    showError('Error generating PDF: ' + error.message);
+                } finally {
+                    elements.generateFlexiblePdfBtn.disabled = false;
+                    elements.generateFlexiblePdfBtn.textContent = 'Generate Flexible PDF';
+                }
+            }
+
+            async function loadSavedConfigs() {
+                try {
+                    const response = await fetch('/api/pricing-configs');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        elements.savedConfigsSelect.innerHTML = '<option value="">Choose a saved configuration...</option>';
+                        result.configs.forEach(config => {
+                            const option = document.createElement('option');
+                            option.value = config.id;
+                            option.textContent = config.configName;
+                            elements.savedConfigsSelect.appendChild(option);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading saved configs:', error);
                 }
             }
 
             // Utility functions
             function showLoading(message) {
-                elements.loadingState.innerHTML = [
-                    '<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>',
-                    '<p class="text-gray-600">' + message + '</p>'
-                ].join('');
+                elements.loadingState.innerHTML = \`
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-gray-600">\${message}</p>
+                \`;
                 elements.loadingState.classList.remove('hidden');
-                elements.productList.classList.add('hidden');
+                elements.productTableSection.classList.add('hidden');
             }
 
             function hideLoading() {
@@ -1423,16 +2113,15 @@ app.get('/create-price-list', (req, res) => {
 
                 const messageEl = document.createElement('div');
                 messageEl.className = 'border-l-4 p-4 mb-4 ' + alertClass;
-                messageEl.innerHTML = [
-                    '<div class="flex justify-between">',
-                    '<span>' + message + '</span>',
-                    '<button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-sm underline">✕</button>',
-                    '</div>'
-                ].join('');
+                messageEl.innerHTML = \`
+                    <div class="flex justify-between">
+                        <span>\${message}</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-sm underline">✕</button>
+                    </div>
+                \`;
                 
                 elements.statusMessages.appendChild(messageEl);
                 
-                // Auto-remove after 5 seconds
                 setTimeout(() => {
                     if (messageEl.parentNode) {
                         messageEl.remove();
@@ -1444,6 +2133,10 @@ app.get('/create-price-list', (req, res) => {
             function showError(message) { showMessage(message, 'error'); }
             function showInfo(message) { showMessage(message, 'info'); }
             function showWarning(message) { showMessage(message, 'warning'); }
+
+            // Initialize
+            selectTier('retail');
+            loadSavedConfigs();
         </script>
     </body>
     </html>
@@ -1451,7 +2144,6 @@ app.get('/create-price-list', (req, res) => {
   
   res.send(createHTML);
 });
-
 app.get('/create-price-list', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/create-price-list.html'));
 });
