@@ -1,6 +1,8 @@
-// Draft Orders API Integration - Create as src/draft-orders.js
+// Draft Orders API Integration - Enhanced for QR Code Integration
 
-const express = require('express');
+import express from 'express';
+import QRCode from 'qrcode';
+
 const router = express.Router();
 
 class DraftOrderManager {
@@ -13,11 +15,18 @@ class DraftOrderManager {
     async createDraftOrder(priceListData) {
         const draftOrderPayload = {
             draft_order: {
-                line_items: priceListData.products.map(product => ({
-                    variant_id: product.variant_id,
-                    quantity: product.quantity || 1,
-                    price: product.customPrice || this.calculateDiscountedPrice(product, priceListData.discount)
-                })),
+                line_items: priceListData.products.map(product => {
+                    const variant = product.variants && product.variants[0] ? product.variants[0] : {};
+                    const variantId = variant.id ? variant.id.split('/').pop() : product.id.split('/').pop();
+                    const basePrice = variant.price || 0;
+                    const finalPrice = product.pricing ? product.pricing.finalPrice : basePrice;
+                    
+                    return {
+                        variant_id: variantId,
+                        quantity: product.quantity || 1,
+                        price: finalPrice.toString()
+                    };
+                }),
                 
                 customer: {
                     email: priceListData.clientEmail,
@@ -49,7 +58,7 @@ Generated: ${new Date().toISOString()}`,
         };
 
         try {
-            const response = await this.makeShopifyRequest('POST', '/admin/api/2024-01/draft_orders.json', draftOrderPayload);
+            const response = await this.makeShopifyRequest('POST', '/admin/api/2024-07/draft_orders.json', draftOrderPayload);
             return response.draft_order;
         } catch (error) {
             console.error('Failed to create draft order:', error);
@@ -62,12 +71,36 @@ Generated: ${new Date().toISOString()}`,
         return {
             checkoutURL: draftOrder.invoice_url,
             draftOrderId: draftOrder.id,
-            clientName: priceListData.clientName,
+            clientName: priceListData.clientName || 'Customer',
             totalAmount: draftOrder.total_price,
             itemCount: draftOrder.line_items.length,
             validUntil: this.calculateExpirationDate(30), // 30 days
             generatedAt: new Date().toISOString()
         };
+    }
+
+    // Generate QR code image as base64
+    async generateQRCodeImage(url, options = {}) {
+        try {
+            const qrOptions = {
+                errorCorrectionLevel: 'M',
+                type: 'image/png',
+                quality: 0.92,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                width: 200,
+                ...options
+            };
+            
+            const qrCodeDataURL = await QRCode.toDataURL(url, qrOptions);
+            return qrCodeDataURL;
+        } catch (error) {
+            console.error('QR code generation error:', error);
+            throw new Error('Failed to generate QR code');
+        }
     }
 
     // Create cart permalink (alternative approach)
@@ -133,14 +166,15 @@ Generated: ${new Date().toISOString()}`,
     // Track conversion (check if draft order became real order)
     async checkConversion(draftOrderId) {
         try {
-            const response = await this.makeShopifyRequest('GET', `/admin/api/2024-01/draft_orders/${draftOrderId}.json`);
+            const response = await this.makeShopifyRequest('GET', `/admin/api/2024-07/draft_orders/${draftOrderId}.json`);
             const draftOrder = response.draft_order;
             
             return {
                 isCompleted: draftOrder.status === 'completed',
                 orderId: draftOrder.order_id,
                 completedAt: draftOrder.completed_at,
-                totalPaid: draftOrder.total_price
+                totalPaid: draftOrder.total_price,
+                status: draftOrder.status
             };
         } catch (error) {
             console.error('Failed to check conversion:', error);
@@ -248,4 +282,5 @@ router.get('/check-conversion/:draftOrderId', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;
+export { DraftOrderManager };

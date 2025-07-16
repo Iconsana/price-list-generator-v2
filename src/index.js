@@ -14,7 +14,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const draftOrdersRouter = require('./draft-orders');
+// Import draft orders router and QR code functionality
+import draftOrdersRouter, { DraftOrderManager } from './draft-orders.js';
+import QRCode from 'qrcode';
 
 dotenv.config();
 
@@ -320,6 +322,9 @@ app.use(session({
 // API ROUTES
 // ===========================================
 
+// Mount draft orders router
+app.use('/api/draft-orders', draftOrdersRouter);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -599,7 +604,315 @@ app.get('/api/shopify/test', async (req, res) => {
   }
 });
 
-// Enhanced PDF generation with FIXED characters, full names, and clickable links
+// Enhanced PDF generation with QR codes, clickable links, and professional layout
+app.post('/api/price-lists/generate-pdf-with-qr', async (req, res) => {
+  try {
+    const { 
+      title, 
+      currency, 
+      products, 
+      company, 
+      pricingConfig = {},
+      customPrices = {},
+      clientInfo = {},
+      includeQR = true
+    } = req.body;
+    
+    console.log('📄 Generating enhanced PDF with QR codes');
+    
+    // Import jsPDF
+    const { jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
+    
+    const doc = new jsPDF();
+    
+    // Create draft order and QR code if requested
+    let qrCodeDataURL = null;
+    let draftOrderInfo = null;
+    
+    if (includeQR && products && products.length > 0) {
+      try {
+        const draftOrderManager = new DraftOrderManager({
+          shop: process.env.SHOPIFY_SHOP_NAME,
+          accessToken: process.env.SHOPIFY_ACCESS_TOKEN
+        });
+
+        const priceListData = {
+          products: products.map(product => ({
+            ...product,
+            quantity: 1,
+            pricing: {
+              finalPrice: customPrices[product.id] !== undefined 
+                ? parseFloat(customPrices[product.id])
+                : (product.variants[0]?.price || 0) * (1 - (pricingConfig.discountPercent || 0) / 100)
+            }
+          })),
+          clientName: clientInfo.name || 'Customer',
+          clientEmail: clientInfo.email || 'customer@example.com',
+          pricingTier: pricingConfig.tierName || 'retail',
+          listId: `PL-${Date.now()}`,
+          discount: pricingConfig.discountPercent || 0
+        };
+
+        const draftOrder = await draftOrderManager.createDraftOrder(priceListData);
+        qrCodeDataURL = await draftOrderManager.generateQRCodeImage(draftOrder.invoice_url);
+        draftOrderInfo = {
+          id: draftOrder.id,
+          checkoutURL: draftOrder.invoice_url,
+          totalPrice: draftOrder.total_price,
+          itemCount: draftOrder.line_items.length
+        };
+        
+        console.log('✅ Draft order created with QR code');
+      } catch (qrError) {
+        console.warn('⚠️ QR code generation failed, proceeding without QR:', qrError.message);
+      }
+    }
+
+    // Header with company branding
+    doc.setFontSize(24);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(44, 62, 80); // Dark blue-gray
+    doc.text(company?.name || 'Your Company', 20, 30);
+    
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(52, 73, 94);
+    doc.text(title || 'Custom Price List', 20, 45);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(127, 140, 141);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 55);
+    
+    // Add QR code if available
+    if (qrCodeDataURL) {
+      doc.addImage(qrCodeDataURL, 'PNG', 140, 20, 45, 45);
+      doc.setFontSize(8);
+      doc.setTextColor(52, 73, 94);
+      doc.text('Scan to order instantly', 145, 72);
+      doc.text(`Total: R ${draftOrderInfo.totalPrice}`, 145, 80);
+    }
+    
+    // Show pricing tier info
+    let yPos = qrCodeDataURL ? 90 : 65;
+    if (pricingConfig.tierName) {
+      doc.setFontSize(10);
+      doc.setTextColor(44, 62, 80);
+      doc.text(`Pricing Tier: ${pricingConfig.tierName}`, 20, yPos);
+      yPos += 8;
+    }
+    if (pricingConfig.discountPercent) {
+      doc.text(`Base Discount: ${pricingConfig.discountPercent}%`, 20, yPos);
+      yPos += 8;
+    }
+    
+    // Client information section
+    if (clientInfo.name || clientInfo.email) {
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(44, 62, 80);
+      doc.text('CLIENT INFORMATION', 20, yPos);
+      yPos += 8;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      if (clientInfo.name) {
+        doc.text(`Name: ${clientInfo.name}`, 20, yPos);
+        yPos += 6;
+      }
+      if (clientInfo.email) {
+        doc.text(`Email: ${clientInfo.email}`, 20, yPos);
+        yPos += 6;
+      }
+      yPos += 5;
+    }
+    
+    // Company contact info
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(44, 62, 80);
+    doc.text('COMPANY INFORMATION', 20, yPos);
+    yPos += 8;
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    
+    if (company?.email) {
+      doc.text(`Email: ${company.email}`, 20, yPos);
+      yPos += 6;
+    }
+    if (company?.phone) {
+      doc.text(`Phone: ${company.phone}`, 20, yPos);
+      yPos += 6;
+    }
+    if (company?.website) {
+      doc.text(`Website: ${company.website}`, 20, yPos);
+      yPos += 6;
+    }
+    
+    yPos += 10;
+    
+    // Enhanced table
+    const tableColumns = [
+      { header: 'Product Name', dataKey: 'name' },
+      { header: 'Model/SKU', dataKey: 'sku' },
+      { header: 'Base Price', dataKey: 'basePrice' },
+      { header: 'Your Price', dataKey: 'finalPrice' },
+      { header: 'Savings', dataKey: 'savings' }
+    ];
+    
+    const tableRows = (products || []).map(product => {
+      const variant = product.variants && product.variants[0] ? product.variants[0] : {};
+      const basePrice = variant.price || 0;
+      
+      const hasCustomPrice = customPrices[product.id] !== undefined;
+      let finalPrice;
+      
+      if (hasCustomPrice) {
+        finalPrice = parseFloat(customPrices[product.id]);
+      } else {
+        const discountMultiplier = (100 - (pricingConfig.discountPercent || 0)) / 100;
+        finalPrice = basePrice * discountMultiplier;
+      }
+      
+      const savings = basePrice - finalPrice;
+      const savingsPercent = basePrice > 0 ? ((savings / basePrice) * 100).toFixed(1) : '0';
+      
+      return {
+        name: product.title || 'Unknown Product',
+        sku: variant.sku || 'N/A',
+        basePrice: `R ${basePrice.toFixed(2)}`,
+        finalPrice: `R ${finalPrice.toFixed(2)}` + (hasCustomPrice ? ' *' : ''),
+        savings: savings > 0 ? `-${savingsPercent}%` : '0%',
+        productId: product.id,
+        productHandle: product.handle,
+        productUrl: company?.website ? `${company.website}/products/${product.handle || product.id}` : null
+      };
+    });
+    
+    // Generate table
+    doc.autoTable({
+      columns: tableColumns,
+      body: tableRows,
+      startY: yPos,
+      theme: 'striped',
+      styles: { 
+        fontSize: 9, 
+        cellPadding: 4,
+        textColor: [44, 62, 80],
+        lineColor: [189, 195, 199],
+        lineWidth: 0.1
+      },
+      headStyles: { 
+        fillColor: [52, 152, 219], 
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 10
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250]
+      },
+      columnStyles: {
+        0: { cellWidth: 70 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 25, halign: 'right' },
+        3: { cellWidth: 25, halign: 'right', fillColor: [240, 248, 255] },
+        4: { cellWidth: 20, halign: 'center' }
+      },
+      didDrawCell: (data) => {
+        if (data.column.dataKey === 'name' && data.cell.section === 'body') {
+          const rowData = tableRows[data.row.index];
+          if (rowData.productUrl) {
+            doc.link(
+              data.cell.x, 
+              data.cell.y, 
+              data.cell.width, 
+              data.cell.height, 
+              { url: rowData.productUrl }
+            );
+          }
+        }
+      }
+    });
+    
+    // Enhanced footer
+    const pageHeight = doc.internal.pageSize.height;
+    let footerY = pageHeight - 60;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(44, 62, 80);
+    
+    if (qrCodeDataURL) {
+      doc.setFont(undefined, 'bold');
+      doc.text('🔥 INSTANT ORDERING', 20, footerY);
+      footerY += 8;
+      
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(9);
+      doc.text('1. Scan the QR code above with your phone', 20, footerY);
+      footerY += 6;
+      doc.text('2. Review your personalized order', 20, footerY);
+      footerY += 6;
+      doc.text('3. Complete checkout instantly', 20, footerY);
+      footerY += 10;
+    }
+    
+    doc.setFontSize(8);
+    doc.setTextColor(127, 140, 141);
+    
+    if (Object.keys(customPrices).length > 0) {
+      doc.text('* Custom pricing applied for specific products', 20, footerY);
+      footerY += 6;
+    }
+    
+    if (company?.website) {
+      doc.text('Product names are clickable links to our online store', 20, footerY);
+      footerY += 6;
+    }
+    
+    if (pricingConfig.notes) {
+      doc.text(`Notes: ${pricingConfig.notes}`, 20, footerY);
+      footerY += 6;
+    }
+    
+    if (company?.terms) {
+      doc.text(`Terms: ${company.terms}`, 20, footerY);
+      footerY += 6;
+    }
+    
+    // Footer line
+    doc.setDrawColor(189, 195, 199);
+    doc.setLineWidth(0.5);
+    doc.line(20, pageHeight - 15, 190, pageHeight - 15);
+    
+    // Generation info
+    doc.setFontSize(7);
+    doc.text(
+      `Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, 
+      20, 
+      pageHeight - 8
+    );
+    
+    const pdfBuffer = doc.output('arraybuffer');
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="price-list-with-qr-${Date.now()}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.byteLength);
+    res.end(Buffer.from(pdfBuffer));
+    
+    console.log('✅ Enhanced PDF with QR code generated successfully');
+    
+  } catch (error) {
+    console.error('❌ Enhanced PDF generation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Enhanced PDF generation failed',
+      error: error.message
+    });
+  }
+});
+
+// Enhanced PDF generation with FIXED characters, full names, and clickable links (original endpoint)
 app.post('/api/price-lists/generate-pdf-flexible', async (req, res) => {
   try {
     const { 
@@ -969,6 +1282,129 @@ app.post('/api/calculate-pricing', async (req, res) => {
 });
 
 // ===========================================
+// QR CODE GENERATION ENDPOINTS
+// ===========================================
+
+// Generate QR code for any URL
+app.post('/api/generate-qr', async (req, res) => {
+  try {
+    const { url, options = {} } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        message: 'URL is required'
+      });
+    }
+
+    // QR code generation options
+    const qrOptions = {
+      errorCorrectionLevel: 'M',
+      type: 'image/png',
+      quality: 0.92,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      },
+      width: 200,
+      ...options
+    };
+
+    const qrCodeDataURL = await QRCode.toDataURL(url, qrOptions);
+    
+    res.json({
+      success: true,
+      qrCodeDataURL,
+      url,
+      message: 'QR code generated successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ QR generation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate QR code',
+      error: error.message
+    });
+  }
+});
+
+// Generate QR code and create draft order for price list
+app.post('/api/generate-qr-with-draft-order', async (req, res) => {
+  try {
+    const { 
+      products, 
+      company, 
+      pricingConfig, 
+      customPrices = {},
+      clientInfo = {} 
+    } = req.body;
+    
+    if (!products || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Products are required'
+      });
+    }
+
+    // Create draft order manager
+    const draftOrderManager = new DraftOrderManager({
+      shop: process.env.SHOPIFY_SHOP_NAME,
+      accessToken: process.env.SHOPIFY_ACCESS_TOKEN
+    });
+
+    // Prepare price list data for draft order
+    const priceListData = {
+      products: products.map(product => ({
+        ...product,
+        quantity: 1,
+        pricing: {
+          finalPrice: customPrices[product.id] !== undefined 
+            ? parseFloat(customPrices[product.id])
+            : (product.variants[0]?.price || 0) * (1 - (pricingConfig.discountPercent || 0) / 100)
+        }
+      })),
+      clientName: clientInfo.name || 'Customer',
+      clientEmail: clientInfo.email || 'customer@example.com',
+      pricingTier: pricingConfig.tierName || 'retail',
+      listId: `PL-${Date.now()}`,
+      discount: pricingConfig.discountPercent || 0
+    };
+
+    // Create draft order
+    const draftOrder = await draftOrderManager.createDraftOrder(priceListData);
+    
+    // Generate QR code for the checkout URL
+    const qrCodeDataURL = await draftOrderManager.generateQRCodeImage(draftOrder.invoice_url);
+    
+    // Generate QR data
+    const qrData = draftOrderManager.generateQRData(draftOrder, priceListData);
+
+    res.json({
+      success: true,
+      draftOrder: {
+        id: draftOrder.id,
+        checkoutURL: draftOrder.invoice_url,
+        totalPrice: draftOrder.total_price,
+        itemCount: draftOrder.line_items.length
+      },
+      qrCodeDataURL,
+      qrData,
+      message: 'QR code and draft order created successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ QR + Draft Order generation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate QR code and draft order',
+      error: error.message
+    });
+  }
+});
+
+// ===========================================
 // FRONTEND ROUTES
 // ===========================================
 
@@ -1196,6 +1632,9 @@ app.get('/create-price-list', (req, res) => {
                             <button id="generateFlexiblePdfBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700" disabled>
                                 Generate PDF
                             </button>
+                            <button id="generateQRPdfBtn" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700" disabled>
+                                🔥 Generate PDF with QR Code
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1279,6 +1718,7 @@ app.get('/create-price-list', (req, res) => {
                 testConnectionBtn: document.getElementById('testConnectionBtn'),
                 loadProductsBtn: document.getElementById('loadProductsBtn'),
                 generateFlexiblePdfBtn: document.getElementById('generateFlexiblePdfBtn'),
+                generateQRPdfBtn: document.getElementById('generateQRPdfBtn'),
                 searchProducts: document.getElementById('searchProducts'),
                 searchBtn: document.getElementById('searchBtn'),
                 selectAllBtn: document.getElementById('selectAllBtn'),
@@ -1414,6 +1854,10 @@ app.get('/create-price-list', (req, res) => {
 
             elements.generateFlexiblePdfBtn.addEventListener('click', async () => {
                 await generateFlexiblePDF();
+            });
+
+            elements.generateQRPdfBtn.addEventListener('click', async () => {
+                await generateQRPDF();
             });
 
             async function loadProducts(searchTerm = null) {
@@ -1576,6 +2020,7 @@ app.get('/create-price-list', (req, res) => {
                 if (selectedCount > 0) {
                     elements.pricingSummary.classList.remove('hidden');
                     elements.generateFlexiblePdfBtn.disabled = false;
+                    elements.generateQRPdfBtn.disabled = false;
                     
                     const customPriced = Object.keys(state.customPrices).length;
                     
@@ -1584,6 +2029,7 @@ app.get('/create-price-list', (req, res) => {
                 } else {
                     elements.pricingSummary.classList.add('hidden');
                     elements.generateFlexiblePdfBtn.disabled = true;
+                    elements.generateQRPdfBtn.disabled = true;
                 }
             }
 
@@ -1649,6 +2095,79 @@ app.get('/create-price-list', (req, res) => {
                 } finally {
                     elements.generateFlexiblePdfBtn.disabled = false;
                     elements.generateFlexiblePdfBtn.textContent = 'Generate PDF';
+                }
+            }
+
+            async function generateQRPDF() {
+                try {
+                    const selectedProductsArray = state.calculatedProducts.filter(p => 
+                        state.selectedProducts.has(p.id)
+                    );
+                    
+                    if (selectedProductsArray.length === 0) {
+                        showError('Please select at least one product');
+                        return;
+                    }
+                    
+                    elements.generateQRPdfBtn.disabled = true;
+                    elements.generateQRPdfBtn.textContent = 'Generating QR PDF...';
+                    
+                    const companyInfo = {
+                        name: document.getElementById('companyName').value || 'Your Company',
+                        email: document.getElementById('companyEmail').value || '',
+                        phone: document.getElementById('companyPhone').value || '',
+                        website: document.getElementById('companyWebsite').value || '',
+                        terms: 'Payment terms are COD. T\\'s & C\\'s Apply.'
+                    };
+                    
+                    const pricingConfig = {
+                        tierName: state.selectedTier,
+                        discountPercent: state.tierDiscounts[state.selectedTier],
+                        notes: ''
+                    };
+                    
+                    // Add client info for QR code generation
+                    const clientInfo = {
+                        name: 'Customer', // You can add input fields for this later
+                        email: 'customer@example.com'
+                    };
+                    
+                    const response = await fetch('/api/price-lists/generate-pdf-with-qr', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: \`\${state.selectedTier.charAt(0).toUpperCase() + state.selectedTier.slice(1)} Price List with QR Code\`,
+                            currency: 'ZAR',
+                            products: selectedProductsArray,
+                            company: companyInfo,
+                            pricingConfig,
+                            customPrices: state.customPrices,
+                            clientInfo,
+                            includeQR: true
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = \`\${state.selectedTier}-price-list-qr-\${Date.now()}.pdf\`;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        window.URL.revokeObjectURL(url);
+                        
+                        showSuccess('🔥 QR PDF generated and downloaded! Customers can now scan to order instantly!');
+                    } else {
+                        const error = await response.json();
+                        showError('QR PDF generation failed: ' + error.message);
+                    }
+                } catch (error) {
+                    showError('Error generating QR PDF: ' + error.message);
+                } finally {
+                    elements.generateQRPdfBtn.disabled = false;
+                    elements.generateQRPdfBtn.textContent = '🔥 Generate PDF with QR Code';
                 }
             }
 
