@@ -1282,6 +1282,183 @@ app.post('/api/calculate-pricing', async (req, res) => {
 });
 
 // ===========================================
+// PRICE LIST STORAGE ENDPOINTS
+// ===========================================
+
+// Save price list
+app.post('/api/price-lists/save', async (req, res) => {
+  try {
+    const priceListData = req.body;
+    
+    if (!priceListData.name || !priceListData.products || priceListData.products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name and products are required'
+      });
+    }
+
+    // Generate unique ID
+    const id = `pl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Enhanced price list data
+    const savedPriceList = {
+      id,
+      ...priceListData,
+      savedAt: new Date().toISOString(),
+      status: 'active'
+    };
+
+    // In a real app, you'd save to database
+    // For now, we'll simulate saving and return success
+    console.log('💾 Saving price list:', savedPriceList.name);
+    
+    res.json({
+      success: true,
+      message: 'Price list saved successfully',
+      priceList: {
+        id: savedPriceList.id,
+        name: savedPriceList.name,
+        totalProducts: savedPriceList.totalProducts,
+        totalValue: savedPriceList.totalValue,
+        pricingTier: savedPriceList.pricingConfig.tierName,
+        createdAt: savedPriceList.createdAt,
+        savedAt: savedPriceList.savedAt
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error saving price list:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save price list',
+      error: error.message
+    });
+  }
+});
+
+// Get all saved price lists
+app.get('/api/price-lists', async (req, res) => {
+  try {
+    // In a real app, you'd fetch from database
+    // For now, return sample data
+    const samplePriceLists = [
+      {
+        id: 'pl_1704067200000_abc123',
+        name: 'Wholesale Battery Price List',
+        totalProducts: 5,
+        totalValue: 85000,
+        pricingTier: 'wholesale',
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        savedAt: new Date(Date.now() - 86400000).toISOString(),
+        status: 'active'
+      },
+      {
+        id: 'pl_1704153600000_def456',
+        name: 'Installer Solar Kit Pricing',
+        totalProducts: 8,
+        totalValue: 125000,
+        pricingTier: 'installer',
+        createdAt: new Date(Date.now() - 172800000).toISOString(),
+        savedAt: new Date(Date.now() - 172800000).toISOString(),
+        status: 'active'
+      },
+      {
+        id: 'pl_1704240000000_ghi789',
+        name: 'Retail Customer Quote',
+        totalProducts: 3,
+        totalValue: 45000,
+        pricingTier: 'retail',
+        createdAt: new Date(Date.now() - 259200000).toISOString(),
+        savedAt: new Date(Date.now() - 259200000).toISOString(),
+        status: 'active'
+      }
+    ];
+    
+    res.json({
+      success: true,
+      priceLists: samplePriceLists,
+      count: samplePriceLists.length,
+      message: 'Price lists loaded successfully'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error loading price lists:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load price lists',
+      error: error.message
+    });
+  }
+});
+
+// Get specific price list
+app.get('/api/price-lists/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // In a real app, you'd fetch from database
+    // For now, return sample data
+    const samplePriceList = {
+      id: id,
+      name: 'Sample Price List',
+      products: [], // Would contain full product data
+      company: {
+        name: 'Your Company',
+        email: 'sales@company.com',
+        phone: '+27 11 123 4567',
+        website: 'https://yourstore.com'
+      },
+      pricingConfig: {
+        tierName: 'wholesale',
+        discountPercent: 15,
+        notes: ''
+      },
+      customPrices: {},
+      createdAt: new Date().toISOString(),
+      totalProducts: 0,
+      totalValue: 0
+    };
+    
+    res.json({
+      success: true,
+      priceList: samplePriceList,
+      message: 'Price list loaded successfully'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error loading price list:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load price list',
+      error: error.message
+    });
+  }
+});
+
+// Delete price list
+app.delete('/api/price-lists/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // In a real app, you'd delete from database
+    console.log('🗑️ Deleting price list:', id);
+    
+    res.json({
+      success: true,
+      message: 'Price list deleted successfully'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error deleting price list:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete price list',
+      error: error.message
+    });
+  }
+});
+
+// ===========================================
 // QR CODE GENERATION ENDPOINTS
 // ===========================================
 
@@ -1630,10 +1807,13 @@ app.get('/create-price-list', (req, res) => {
                                 Load Products
                             </button>
                             <button id="generateFlexiblePdfBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700" disabled>
-                                Generate PDF
+                                📄 Generate PDF (Basic)
                             </button>
                             <button id="generateQRPdfBtn" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700" disabled>
                                 🔥 Generate PDF with QR Code
+                            </button>
+                            <button id="savePriceListBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700" disabled>
+                                💾 Save Price List
                             </button>
                         </div>
                     </div>
@@ -1719,6 +1899,7 @@ app.get('/create-price-list', (req, res) => {
                 loadProductsBtn: document.getElementById('loadProductsBtn'),
                 generateFlexiblePdfBtn: document.getElementById('generateFlexiblePdfBtn'),
                 generateQRPdfBtn: document.getElementById('generateQRPdfBtn'),
+                savePriceListBtn: document.getElementById('savePriceListBtn'),
                 searchProducts: document.getElementById('searchProducts'),
                 searchBtn: document.getElementById('searchBtn'),
                 selectAllBtn: document.getElementById('selectAllBtn'),
@@ -1858,6 +2039,10 @@ app.get('/create-price-list', (req, res) => {
 
             elements.generateQRPdfBtn.addEventListener('click', async () => {
                 await generateQRPDF();
+            });
+
+            elements.savePriceListBtn.addEventListener('click', async () => {
+                await savePriceList();
             });
 
             async function loadProducts(searchTerm = null) {
@@ -2021,6 +2206,7 @@ app.get('/create-price-list', (req, res) => {
                     elements.pricingSummary.classList.remove('hidden');
                     elements.generateFlexiblePdfBtn.disabled = false;
                     elements.generateQRPdfBtn.disabled = false;
+                    elements.savePriceListBtn.disabled = false;
                     
                     const customPriced = Object.keys(state.customPrices).length;
                     
@@ -2030,6 +2216,7 @@ app.get('/create-price-list', (req, res) => {
                     elements.pricingSummary.classList.add('hidden');
                     elements.generateFlexiblePdfBtn.disabled = true;
                     elements.generateQRPdfBtn.disabled = true;
+                    elements.savePriceListBtn.disabled = true;
                 }
             }
 
@@ -2061,7 +2248,7 @@ app.get('/create-price-list', (req, res) => {
                         notes: ''
                     };
                     
-                    const response = await fetch('/api/price-lists/generate-pdf-flexible', {
+                    const response = await fetch('/api/price-lists/generate-pdf-with-qr', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -2070,7 +2257,12 @@ app.get('/create-price-list', (req, res) => {
                             products: selectedProductsArray,
                             company: companyInfo,
                             pricingConfig,
-                            customPrices: state.customPrices
+                            customPrices: state.customPrices,
+                            clientInfo: {
+                                name: 'Customer',
+                                email: 'customer@example.com'
+                            },
+                            includeQR: true
                         })
                     });
                     
@@ -2085,7 +2277,7 @@ app.get('/create-price-list', (req, res) => {
                         link.remove();
                         window.URL.revokeObjectURL(url);
                         
-                        showSuccess('PDF generated and downloaded!');
+                        showSuccess('🔥 PDF with QR code generated and downloaded! Customers can scan to order instantly!');
                     } else {
                         const error = await response.json();
                         showError('PDF generation failed: ' + error.message);
@@ -2171,6 +2363,68 @@ app.get('/create-price-list', (req, res) => {
                 }
             }
 
+            async function savePriceList() {
+                try {
+                    const selectedProductsArray = state.calculatedProducts.filter(p => 
+                        state.selectedProducts.has(p.id)
+                    );
+                    
+                    if (selectedProductsArray.length === 0) {
+                        showError('Please select at least one product');
+                        return;
+                    }
+                    
+                    const listName = prompt('Enter a name for this price list:');
+                    if (!listName) return;
+                    
+                    elements.savePriceListBtn.disabled = true;
+                    elements.savePriceListBtn.textContent = 'Saving...';
+                    
+                    const companyInfo = {
+                        name: document.getElementById('companyName').value || 'Your Company',
+                        email: document.getElementById('companyEmail').value || '',
+                        phone: document.getElementById('companyPhone').value || '',
+                        website: document.getElementById('companyWebsite').value || ''
+                    };
+                    
+                    const pricingConfig = {
+                        tierName: state.selectedTier,
+                        discountPercent: state.tierDiscounts[state.selectedTier],
+                        notes: ''
+                    };
+                    
+                    const priceListData = {
+                        name: listName,
+                        products: selectedProductsArray,
+                        company: companyInfo,
+                        pricingConfig,
+                        customPrices: state.customPrices,
+                        createdAt: new Date().toISOString(),
+                        totalProducts: selectedProductsArray.length,
+                        totalValue: selectedProductsArray.reduce((sum, p) => sum + (p.pricing?.finalPrice || 0), 0)
+                    };
+                    
+                    const response = await fetch('/api/price-lists/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(priceListData)
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        showSuccess(\`Price list "\${listName}" saved successfully!\`);
+                    } else {
+                        const error = await response.json();
+                        showError('Failed to save price list: ' + error.message);
+                    }
+                } catch (error) {
+                    showError('Error saving price list: ' + error.message);
+                } finally {
+                    elements.savePriceListBtn.disabled = false;
+                    elements.savePriceListBtn.textContent = '💾 Save Price List';
+                }
+            }
+
             function showLoading(message) {
                 elements.loadingState.innerHTML = \`
                     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -2225,9 +2479,281 @@ app.get('/create-price-list', (req, res) => {
   res.send(createHTML);
 });
 
-// Other pages
+// My Price Lists page
 app.get('/my-price-lists', (req, res) => {
-  res.send('<h1>My Price Lists</h1><p>Coming soon...</p><a href="/">← Back to Home</a>');
+  const myPriceListsHTML = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My Price Lists - Price List Generator</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-50">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center space-x-4">
+                        <a href="/" class="text-2xl font-bold text-gray-900">Price List Generator</a>
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                            APP STATUS: ONLINE
+                        </span>
+                    </div>
+                    <nav class="hidden md:flex space-x-6">
+                        <a href="/" class="text-gray-700 hover:text-blue-600 font-medium">Home</a>
+                        <a href="/my-price-lists" class="text-blue-600 font-medium border-b-2 border-blue-600">My Price Lists</a>
+                        <a href="/create-price-list" class="text-gray-700 hover:text-blue-600 font-medium">Create New</a>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">My Price Lists</h1>
+                <p class="mt-2 text-gray-600">Manage your saved price lists and generate new ones</p>
+            </div>
+
+            <!-- Status Messages -->
+            <div id="statusMessages" class="mb-6"></div>
+
+            <!-- Actions -->
+            <div class="mb-6 flex gap-4">
+                <a href="/create-price-list" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium">
+                    ➕ Create New Price List
+                </a>
+                <button id="refreshBtn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 font-medium">
+                    🔄 Refresh
+                </button>
+            </div>
+
+            <!-- Price Lists Grid -->
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-6">
+                    <div id="loadingState" class="text-center py-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p class="text-gray-600">Loading price lists...</p>
+                    </div>
+                    
+                    <div id="priceListsGrid" class="hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="priceListCards">
+                            <!-- Price list cards will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <div id="emptyState" class="hidden text-center py-12">
+                        <div class="text-6xl mb-4">📋</div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">No price lists yet</h3>
+                        <p class="text-gray-600 mb-6">Create your first price list to get started</p>
+                        <a href="/create-price-list" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium">
+                            Create Your First Price List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <script>
+            let priceLists = [];
+
+            const elements = {
+                statusMessages: document.getElementById('statusMessages'),
+                loadingState: document.getElementById('loadingState'),
+                priceListsGrid: document.getElementById('priceListsGrid'),
+                emptyState: document.getElementById('emptyState'),
+                priceListCards: document.getElementById('priceListCards'),
+                refreshBtn: document.getElementById('refreshBtn')
+            };
+
+            // Load price lists on page load
+            document.addEventListener('DOMContentLoaded', async () => {
+                await loadPriceLists();
+            });
+
+            elements.refreshBtn.addEventListener('click', async () => {
+                await loadPriceLists();
+            });
+
+            async function loadPriceLists() {
+                try {
+                    showLoading();
+                    elements.refreshBtn.disabled = true;
+                    elements.refreshBtn.textContent = 'Loading...';
+
+                    const response = await fetch('/api/price-lists');
+                    const data = await response.json();
+
+                    if (data.success) {
+                        priceLists = data.priceLists || [];
+                        renderPriceLists();
+                        showSuccess(\`Loaded \${priceLists.length} price lists\`);
+                    } else {
+                        showError('Failed to load price lists: ' + data.message);
+                    }
+                } catch (error) {
+                    showError('Error loading price lists: ' + error.message);
+                } finally {
+                    elements.refreshBtn.disabled = false;
+                    elements.refreshBtn.textContent = '🔄 Refresh';
+                }
+            }
+
+            function renderPriceLists() {
+                hideLoading();
+
+                if (priceLists.length === 0) {
+                    elements.emptyState.classList.remove('hidden');
+                    elements.priceListsGrid.classList.add('hidden');
+                    return;
+                }
+
+                elements.emptyState.classList.add('hidden');
+                elements.priceListsGrid.classList.remove('hidden');
+
+                elements.priceListCards.innerHTML = priceLists.map(priceList => \`
+                    <div class="bg-white border rounded-lg p-6 hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">\${priceList.name}</h3>
+                                <div class="flex items-center space-x-4 text-sm text-gray-600">
+                                    <span class="flex items-center">
+                                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                        \${priceList.pricingTier}
+                                    </span>
+                                    <span>\${priceList.totalProducts} products</span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="viewPriceList('\${priceList.id}')" class="text-blue-600 hover:text-blue-800 p-1">
+                                    👁️
+                                </button>
+                                <button onclick="duplicatePriceList('\${priceList.id}')" class="text-green-600 hover:text-green-800 p-1">
+                                    📋
+                                </button>
+                                <button onclick="deletePriceList('\${priceList.id}')" class="text-red-600 hover:text-red-800 p-1">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="text-2xl font-bold text-gray-900">R \${priceList.totalValue.toLocaleString()}</div>
+                            <div class="text-sm text-gray-600">Total value</div>
+                        </div>
+                        
+                        <div class="text-xs text-gray-500 mb-4">
+                            Created: \${new Date(priceList.createdAt).toLocaleDateString()}
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <button onclick="generatePDF('\${priceList.id}')" class="flex-1 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm">
+                                🔥 Generate PDF
+                            </button>
+                            <button onclick="editPriceList('\${priceList.id}')" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
+                                ✏️ Edit
+                            </button>
+                        </div>
+                    </div>
+                \`).join('');
+            }
+
+            async function viewPriceList(id) {
+                try {
+                    const response = await fetch(\`/api/price-lists/\${id}\`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const priceList = data.priceList;
+                        alert(\`Price List: \${priceList.name}\\n\\nProducts: \${priceList.totalProducts}\\nValue: R \${priceList.totalValue.toLocaleString()}\\nTier: \${priceList.pricingConfig.tierName}\\nCreated: \${new Date(priceList.createdAt).toLocaleString()}\`);
+                    } else {
+                        showError('Failed to load price list details');
+                    }
+                } catch (error) {
+                    showError('Error loading price list: ' + error.message);
+                }
+            }
+
+            async function duplicatePriceList(id) {
+                showInfo('Duplicate functionality coming soon...');
+            }
+
+            async function deletePriceList(id) {
+                if (!confirm('Are you sure you want to delete this price list?')) return;
+
+                try {
+                    const response = await fetch(\`/api/price-lists/\${id}\`, {
+                        method: 'DELETE'
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showSuccess('Price list deleted successfully');
+                        await loadPriceLists();
+                    } else {
+                        showError('Failed to delete price list');
+                    }
+                } catch (error) {
+                    showError('Error deleting price list: ' + error.message);
+                }
+            }
+
+            async function generatePDF(id) {
+                showInfo('PDF generation from saved lists coming soon...');
+            }
+
+            async function editPriceList(id) {
+                showInfo('Edit functionality coming soon...');
+            }
+
+            function showLoading() {
+                elements.loadingState.classList.remove('hidden');
+                elements.priceListsGrid.classList.add('hidden');
+                elements.emptyState.classList.add('hidden');
+            }
+
+            function hideLoading() {
+                elements.loadingState.classList.add('hidden');
+            }
+
+            function showMessage(message, type) {
+                const alertClass = {
+                    success: 'bg-green-100 border-green-400 text-green-700',
+                    error: 'bg-red-100 border-red-400 text-red-700',
+                    info: 'bg-blue-100 border-blue-400 text-blue-700',
+                    warning: 'bg-yellow-100 border-yellow-400 text-yellow-700'
+                }[type];
+
+                const messageEl = document.createElement('div');
+                messageEl.className = 'border-l-4 p-4 mb-4 ' + alertClass;
+                messageEl.innerHTML = \`
+                    <div class="flex justify-between">
+                        <span>\${message}</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-sm">✕</button>
+                    </div>
+                \`;
+                
+                elements.statusMessages.appendChild(messageEl);
+                
+                setTimeout(() => {
+                    if (messageEl.parentNode) {
+                        messageEl.remove();
+                    }
+                }, 5000);
+            }
+
+            function showSuccess(message) { showMessage(message, 'success'); }
+            function showError(message) { showMessage(message, 'error'); }
+            function showInfo(message) { showMessage(message, 'info'); }
+            function showWarning(message) { showMessage(message, 'warning'); }
+        </script>
+    </body>
+    </html>
+  `;
+  
+  res.send(myPriceListsHTML);
 });
 
 app.get('/import-document', (req, res) => {
