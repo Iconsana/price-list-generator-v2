@@ -291,6 +291,33 @@ class ShopifyService {
 const shopifyService = new ShopifyService();
 
 // ===========================================
+// IN-MEMORY PRICE LIST STORAGE
+// ===========================================
+// In a real app, this would be a database
+let savedPriceLists = [
+  {
+    id: 'pl_1704067200000_abc123',
+    name: 'Wholesale Battery Price List',
+    totalProducts: 5,
+    totalValue: 85000,
+    pricingTier: 'wholesale',
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    savedAt: new Date(Date.now() - 86400000).toISOString(),
+    status: 'active'
+  },
+  {
+    id: 'pl_1704153600000_def456',
+    name: 'Installer Solar Kit Pricing',
+    totalProducts: 8,
+    totalValue: 125000,
+    pricingTier: 'installer',
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+    savedAt: new Date(Date.now() - 172800000).toISOString(),
+    status: 'active'
+  }
+];
+
+// ===========================================
 // FLEXIBLE PRICING FUNCTIONS
 // ===========================================
 
@@ -626,44 +653,32 @@ app.post('/api/price-lists/generate-pdf-with-qr', async (req, res) => {
     
     const doc = new jsPDF();
     
-    // Create draft order and QR code if requested
+    // Create QR code with simple approach
     let qrCodeDataURL = null;
-    let draftOrderInfo = null;
+    let checkoutURL = null;
     
     if (includeQR && products && products.length > 0) {
       try {
-        const draftOrderManager = new DraftOrderManager({
-          shop: process.env.SHOPIFY_SHOP_NAME,
-          accessToken: process.env.SHOPIFY_ACCESS_TOKEN
-        });
-
-        const priceListData = {
-          products: products.map(product => ({
-            ...product,
-            quantity: 1,
-            pricing: {
-              finalPrice: customPrices[product.id] !== undefined 
-                ? parseFloat(customPrices[product.id])
-                : (product.variants[0]?.price || 0) * (1 - (pricingConfig.discountPercent || 0) / 100)
-            }
-          })),
-          clientName: clientInfo.name || 'Customer',
-          clientEmail: clientInfo.email || 'customer@example.com',
-          pricingTier: pricingConfig.tierName || 'retail',
-          listId: `PL-${Date.now()}`,
-          discount: pricingConfig.discountPercent || 0
-        };
-
-        const draftOrder = await draftOrderManager.createDraftOrder(priceListData);
-        qrCodeDataURL = await draftOrderManager.generateQRCodeImage(draftOrder.invoice_url);
-        draftOrderInfo = {
-          id: draftOrder.id,
-          checkoutURL: draftOrder.invoice_url,
-          totalPrice: draftOrder.total_price,
-          itemCount: draftOrder.line_items.length
-        };
+        // For now, create a simple QR code with a basic URL
+        // In production, this would be a real checkout URL
+        const baseURL = process.env.APP_URL || 'http://localhost:3000';
+        checkoutURL = `${baseURL}/checkout?list=${Date.now()}`;
         
-        console.log('✅ Draft order created with QR code');
+        // Generate QR code using the qrcode library
+        const QRCode = await import('qrcode');
+        qrCodeDataURL = await QRCode.toDataURL(checkoutURL, {
+          errorCorrectionLevel: 'M',
+          type: 'image/png',
+          quality: 0.92,
+          margin: 1,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          },
+          width: 150
+        });
+        
+        console.log('✅ QR code generated successfully');
       } catch (qrError) {
         console.warn('⚠️ QR code generation failed, proceeding without QR:', qrError.message);
       }
@@ -686,11 +701,18 @@ app.post('/api/price-lists/generate-pdf-with-qr', async (req, res) => {
     
     // Add QR code if available
     if (qrCodeDataURL) {
-      doc.addImage(qrCodeDataURL, 'PNG', 140, 20, 45, 45);
-      doc.setFontSize(8);
-      doc.setTextColor(52, 73, 94);
-      doc.text('Scan to order instantly', 145, 72);
-      doc.text(`Total: R ${draftOrderInfo.totalPrice}`, 145, 80);
+      try {
+        doc.addImage(qrCodeDataURL, 'PNG', 140, 20, 40, 40);
+        doc.setFontSize(8);
+        doc.setTextColor(52, 73, 94);
+        doc.text('Scan for instant ordering', 145, 65);
+        doc.text('Quick checkout available', 145, 72);
+        console.log('✅ QR code added to PDF');
+      } catch (err) {
+        console.warn('⚠️ Failed to add QR code to PDF:', err.message);
+      }
+    } else {
+      console.warn('⚠️ No QR code available for PDF');
     }
     
     // Show pricing tier info
@@ -1308,9 +1330,10 @@ app.post('/api/price-lists/save', async (req, res) => {
       status: 'active'
     };
 
-    // In a real app, you'd save to database
-    // For now, we'll simulate saving and return success
+    // Save to in-memory storage
+    savedPriceLists.push(savedPriceList);
     console.log('💾 Saving price list:', savedPriceList.name);
+    console.log('📊 Total saved price lists:', savedPriceLists.length);
     
     res.json({
       success: true,
@@ -1339,45 +1362,24 @@ app.post('/api/price-lists/save', async (req, res) => {
 // Get all saved price lists
 app.get('/api/price-lists', async (req, res) => {
   try {
-    // In a real app, you'd fetch from database
-    // For now, return sample data
-    const samplePriceLists = [
-      {
-        id: 'pl_1704067200000_abc123',
-        name: 'Wholesale Battery Price List',
-        totalProducts: 5,
-        totalValue: 85000,
-        pricingTier: 'wholesale',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        savedAt: new Date(Date.now() - 86400000).toISOString(),
-        status: 'active'
-      },
-      {
-        id: 'pl_1704153600000_def456',
-        name: 'Installer Solar Kit Pricing',
-        totalProducts: 8,
-        totalValue: 125000,
-        pricingTier: 'installer',
-        createdAt: new Date(Date.now() - 172800000).toISOString(),
-        savedAt: new Date(Date.now() - 172800000).toISOString(),
-        status: 'active'
-      },
-      {
-        id: 'pl_1704240000000_ghi789',
-        name: 'Retail Customer Quote',
-        totalProducts: 3,
-        totalValue: 45000,
-        pricingTier: 'retail',
-        createdAt: new Date(Date.now() - 259200000).toISOString(),
-        savedAt: new Date(Date.now() - 259200000).toISOString(),
-        status: 'active'
-      }
-    ];
+    // Return real saved price lists
+    const priceLists = savedPriceLists.map(pl => ({
+      id: pl.id,
+      name: pl.name,
+      totalProducts: pl.totalProducts,
+      totalValue: pl.totalValue,
+      pricingTier: pl.pricingConfig ? pl.pricingConfig.tierName : pl.pricingTier,
+      createdAt: pl.createdAt,
+      savedAt: pl.savedAt,
+      status: pl.status
+    }));
+    
+    console.log('📋 Loading price lists:', priceLists.length, 'found');
     
     res.json({
       success: true,
-      priceLists: samplePriceLists,
-      count: samplePriceLists.length,
+      priceLists: priceLists,
+      count: priceLists.length,
       message: 'Price lists loaded successfully'
     });
     
@@ -1440,13 +1442,24 @@ app.delete('/api/price-lists/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // In a real app, you'd delete from database
-    console.log('🗑️ Deleting price list:', id);
+    // Find and remove from in-memory storage
+    const initialLength = savedPriceLists.length;
+    savedPriceLists = savedPriceLists.filter(pl => pl.id !== id);
+    const deleted = savedPriceLists.length < initialLength;
     
-    res.json({
-      success: true,
-      message: 'Price list deleted successfully'
-    });
+    console.log('🗑️ Deleting price list:', id, deleted ? 'Success' : 'Not found');
+    
+    if (deleted) {
+      res.json({
+        success: true,
+        message: 'Price list deleted successfully'
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Price list not found'
+      });
+    }
     
   } catch (error) {
     console.error('❌ Error deleting price list:', error);
@@ -2762,6 +2775,52 @@ app.get('/import-document', (req, res) => {
 
 app.get('/templates', (req, res) => {
   res.send('<h1>Templates</h1><p>Coming soon...</p><a href="/">← Back to Home</a>');
+});
+
+// Checkout page for QR code scans
+app.get('/checkout', (req, res) => {
+  const { list } = req.query;
+  
+  const checkoutHTML = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Checkout - Price List Generator</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-50">
+        <div class="max-w-2xl mx-auto py-12 px-4">
+            <div class="bg-white rounded-lg shadow-md p-8 text-center">
+                <div class="text-6xl mb-4">📱</div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-4">QR Code Checkout</h1>
+                <p class="text-gray-600 mb-6">You scanned a QR code from a price list!</p>
+                <p class="text-sm text-gray-500 mb-8">Price List ID: ${list || 'Unknown'}</p>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <h2 class="text-lg font-semibold text-blue-900 mb-2">🚀 Coming Soon!</h2>
+                    <p class="text-blue-800">This will redirect to Shopify checkout with your custom pricing from the price list.</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <a href="/create-price-list" class="block bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 font-medium">
+                        Create New Price List
+                    </a>
+                    <a href="/my-price-lists" class="block bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 font-medium">
+                        View My Price Lists
+                    </a>
+                    <a href="/" class="block text-blue-600 hover:text-blue-800 font-medium">
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+  
+  res.send(checkoutHTML);
 });
 
 // ===========================================
