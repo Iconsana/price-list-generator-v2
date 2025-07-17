@@ -234,20 +234,31 @@ export class PDFService {
       doc.setFont('helvetica', 'normal');
       doc.text('Choose your preferred method:', 25, currentY + 25);
       
-      // Order button styling
+      // Order button styling with clickable link
+      const productIds = products.map(p => p.id).join(',');
+      const orderUrl = `${process.env.APP_URL || 'http://localhost:3000'}/checkout?priceList=${productIds}&action=order`;
+      
       doc.setFillColor(59, 130, 246); // Blue
       doc.rect(25, currentY + 30, 70, 12, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
+      
+      // Add clickable link for order button
+      doc.link(25, currentY + 30, 70, 12, { url: orderUrl });
       doc.text('Turn Price List into Order', 28, currentY + 38);
       
-      // Quote button styling
+      // Quote button styling with clickable link
+      const quoteUrl = `${process.env.APP_URL || 'http://localhost:3000'}/checkout?priceList=${productIds}&action=quote`;
+      
       doc.setFillColor(34, 197, 94); // Green
       doc.rect(25, currentY + 45, 70, 12, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
+      
+      // Add clickable link for quote button
+      doc.link(25, currentY + 45, 70, 12, { url: quoteUrl });
       doc.text('Turn Price List into Quote', 28, currentY + 53);
       
       // QR code section (right side)

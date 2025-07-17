@@ -8,7 +8,9 @@ const router = express.Router();
 class DraftOrderManager {
     constructor(shopifyConfig) {
         this.shopify = shopifyConfig;
-        this.baseURL = `https://${shopifyConfig.shop}.myshopify.com`;
+        // Fix double domain issue
+        const cleanDomain = shopifyConfig.shop.replace('.myshopify.com', '');
+        this.baseURL = `https://${cleanDomain}.myshopify.com`;
     }
 
     // Create draft order from price list

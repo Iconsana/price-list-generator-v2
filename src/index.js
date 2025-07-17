@@ -3063,8 +3063,70 @@ app.get('/templates', (req, res) => {
 });
 
 // Checkout page for QR code scans
-app.get('/checkout', (req, res) => {
-  const { list } = req.query;
+app.get('/checkout', async (req, res) => {
+  const { priceList, list } = req.query;
+  let actualProducts = [];
+  
+  // Try to get real product data
+  if (priceList) {
+    try {
+      const productIds = priceList.split(',');
+      console.log('🔍 Looking up products for checkout:', productIds);
+      
+      // Get products from Shopify if available
+      const shopifyService = new ShopifyService();
+      const shopifyProducts = await shopifyService.getProducts();
+      
+      actualProducts = shopifyProducts.filter(product => 
+        productIds.includes(product.id)
+      ).map(product => ({
+        id: product.id,
+        title: product.title,
+        price: parseFloat(product.variants?.[0]?.price || 0),
+        originalPrice: parseFloat(product.variants?.[0]?.price || 0),
+        quantity: 1,
+        image: product.images?.[0]?.url || '',
+        discountPercent: 15 // Default wholesale discount
+      }));
+      
+      console.log('✅ Found products for checkout:', actualProducts.length);
+    } catch (error) {
+      console.log('⚠️ Could not fetch real products, using fallback data');
+    }
+  }
+  
+  // Fallback to sample data if no real products found
+  if (actualProducts.length === 0) {
+    actualProducts = [
+      { 
+        id: 'sunsynk-5-12kwh', 
+        title: 'Sunsynk 5.12kWh Battery', 
+        price: 18700, 
+        originalPrice: 22000,
+        quantity: 1,
+        image: '',
+        discountPercent: 15
+      },
+      { 
+        id: 'dyness-5-12kwh', 
+        title: 'Dyness 5.12kWh Battery', 
+        price: 16150, 
+        originalPrice: 19000,
+        quantity: 1,
+        image: '',
+        discountPercent: 15
+      },
+      { 
+        id: 'esener-2-56kwh', 
+        title: 'Esener 2.56kWh Battery', 
+        price: 9180, 
+        originalPrice: 10800,
+        quantity: 1,
+        image: '',
+        discountPercent: 15
+      }
+    ];
+  }
   
   const checkoutHTML = `
     <!DOCTYPE html>
@@ -3104,43 +3166,21 @@ app.get('/checkout', (req, res) => {
                         </div>
                     </div>
 
-                    <!-- Sample Products -->
+                    <!-- Actual Products -->
                     <div class="space-y-4 mb-8">
+                        ${actualProducts.map(product => `
                         <div class="border rounded-lg p-4 flex justify-between items-center">
                             <div class="flex-1">
-                                <h3 class="font-semibold text-gray-900">Sunsynk 5.12kWh Battery</h3>
-                                <p class="text-sm text-gray-600">Wall mount lithium battery system</p>
+                                <h3 class="font-semibold text-gray-900">${product.title}</h3>
+                                <p class="text-sm text-gray-600">Wholesale pricing applied</p>
                             </div>
                             <div class="text-right">
-                                <div class="text-sm text-gray-500 line-through">R 22,000</div>
-                                <div class="text-lg font-bold text-green-600">R 18,700</div>
-                                <div class="text-xs text-green-600">15% off</div>
+                                <div class="text-sm text-gray-500 line-through">R ${product.originalPrice.toLocaleString()}</div>
+                                <div class="text-lg font-bold text-green-600">R ${product.price.toLocaleString()}</div>
+                                <div class="text-xs text-green-600">${product.discountPercent}% off</div>
                             </div>
                         </div>
-                        
-                        <div class="border rounded-lg p-4 flex justify-between items-center">
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-gray-900">Dyness 5.12kWh Battery</h3>
-                                <p class="text-sm text-gray-600">BX51100 series battery</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-sm text-gray-500 line-through">R 19,000</div>
-                                <div class="text-lg font-bold text-green-600">R 16,150</div>
-                                <div class="text-xs text-green-600">15% off</div>
-                            </div>
-                        </div>
-                        
-                        <div class="border rounded-lg p-4 flex justify-between items-center">
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-gray-900">Esener 2.56kWh Battery</h3>
-                                <p class="text-sm text-gray-600">Multifunctional lithium battery</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-sm text-gray-500 line-through">R 10,800</div>
-                                <div class="text-lg font-bold text-green-600">R 9,180</div>
-                                <div class="text-xs text-green-600">15% off</div>
-                            </div>
-                        </div>
+                        `).join('')}
                     </div>
 
                     <!-- Total -->
@@ -3148,9 +3188,9 @@ app.get('/checkout', (req, res) => {
                         <div class="flex justify-between items-center mb-4">
                             <span class="text-lg font-semibold text-gray-900">Total</span>
                             <div class="text-right">
-                                <div class="text-sm text-gray-500 line-through">R 51,800</div>
-                                <div class="text-2xl font-bold text-green-600">R 44,030</div>
-                                <div class="text-sm text-green-600">You save R 7,770 (15%)</div>
+                                <div class="text-sm text-gray-500 line-through">R ${actualProducts.reduce((sum, p) => sum + p.originalPrice, 0).toLocaleString()}</div>
+                                <div class="text-2xl font-bold text-green-600">R ${actualProducts.reduce((sum, p) => sum + p.price, 0).toLocaleString()}</div>
+                                <div class="text-sm text-green-600">You save R ${(actualProducts.reduce((sum, p) => sum + p.originalPrice, 0) - actualProducts.reduce((sum, p) => sum + p.price, 0)).toLocaleString()} (${actualProducts[0]?.discountPercent || 15}%)</div>
                             </div>
                         </div>
                         
@@ -3193,12 +3233,8 @@ app.get('/checkout', (req, res) => {
                 try {
                     showInfo('🚀 Processing your Shopify checkout...');
                     
-                    // Create cart with custom pricing
-                    const cartItems = [
-                        { id: 'sunsynk-5-12kwh', title: 'Sunsynk 5.12kWh Battery', price: 18700, quantity: 1 },
-                        { id: 'dyness-5-12kwh', title: 'Dyness 5.12kWh Battery', price: 16150, quantity: 1 },
-                        { id: 'esener-2-56kwh', title: 'Esener 2.56kWh Battery', price: 9180, quantity: 1 }
-                    ];
+                    // Create cart with actual product data
+                    const cartItems = ${JSON.stringify(actualProducts)};
                     
                     const response = await fetch('/api/create-checkout', {
                         method: 'POST',
@@ -3232,12 +3268,8 @@ app.get('/checkout', (req, res) => {
                     
                     const draftData = {
                         customerEmail: 'customer@example.com',
-                        items: [
-                            { title: 'Sunsynk 5.12kWh Battery', price: 18700, quantity: 1 },
-                            { title: 'Dyness 5.12kWh Battery', price: 16150, quantity: 1 },
-                            { title: 'Esener 2.56kWh Battery', price: 9180, quantity: 1 }
-                        ],
-                        listId: '${list || 'demo'}',
+                        items: ${JSON.stringify(actualProducts)},
+                        listId: '${priceList || list || 'demo'}',
                         source: 'qr_checkout'
                     };
                     
