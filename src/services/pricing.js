@@ -60,8 +60,8 @@ export class PricingService {
   }
 
   // Format price for display
-  formatPrice(price, currencyCode = 'USD') {
-    return new Intl.NumberFormat('en-US', {
+  formatPrice(price, currencyCode = 'ZAR') {
+    return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: currencyCode
     }).format(price);

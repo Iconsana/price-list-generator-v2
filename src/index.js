@@ -1888,6 +1888,17 @@ app.get('/create-price-list', (req, res) => {
                         </div>
                     </div>
 
+                    <!-- Client Information -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-semibold mb-4">👤 Client Information</h3>
+                        <div class="space-y-4">
+                            <input type="text" id="clientCompanyName" placeholder="Client Company Name" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <input type="email" id="clientEmail" placeholder="client@company.com" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <input type="tel" id="clientPhone" placeholder="+27 11 456 7890" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <input type="text" id="clientAddress" placeholder="Client Address" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        </div>
+                    </div>
+
                     <!-- Flexible Pricing -->
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <h3 class="text-lg font-semibold mb-4">🎯 Flexible Pricing</h3>
@@ -1951,14 +1962,8 @@ app.get('/create-price-list', (req, res) => {
                             <button id="loadProductsBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
                                 Load Products
                             </button>
-                            <button id="generateFlexiblePdfBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700" disabled>
-                                📄 Generate PDF (Basic)
-                            </button>
-                            <button id="generateQRPdfBtn" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700" disabled>
-                                🔥 Generate PDF with QR Code
-                            </button>
                             <button id="generateEnhancedPdfBtn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700" disabled>
-                                ✨ Enhanced Professional PDF
+                                ✨ Generate Professional Quote
                             </button>
                             <button id="savePriceListBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700" disabled>
                                 💾 Save Price List
@@ -2045,8 +2050,6 @@ app.get('/create-price-list', (req, res) => {
             const elements = {
                 testConnectionBtn: document.getElementById('testConnectionBtn'),
                 loadProductsBtn: document.getElementById('loadProductsBtn'),
-                generateFlexiblePdfBtn: document.getElementById('generateFlexiblePdfBtn'),
-                generateQRPdfBtn: document.getElementById('generateQRPdfBtn'),
                 generateEnhancedPdfBtn: document.getElementById('generateEnhancedPdfBtn'),
                 savePriceListBtn: document.getElementById('savePriceListBtn'),
                 searchProducts: document.getElementById('searchProducts'),
@@ -2180,14 +2183,6 @@ app.get('/create-price-list', (req, res) => {
                 state.selectedProducts.clear();
                 renderEnhancedProductList();
                 updatePricingSummary();
-            });
-
-            elements.generateFlexiblePdfBtn.addEventListener('click', async () => {
-                await generateFlexiblePDF();
-            });
-
-            elements.generateQRPdfBtn.addEventListener('click', async () => {
-                await generateQRPDF();
             });
 
             elements.generateEnhancedPdfBtn.addEventListener('click', async () => {
@@ -2357,8 +2352,6 @@ app.get('/create-price-list', (req, res) => {
                 
                 if (selectedCount > 0) {
                     elements.pricingSummary.classList.remove('hidden');
-                    elements.generateFlexiblePdfBtn.disabled = false;
-                    elements.generateQRPdfBtn.disabled = false;
                     elements.generateEnhancedPdfBtn.disabled = false;
                     elements.savePriceListBtn.disabled = false;
                     
@@ -2368,82 +2361,11 @@ app.get('/create-price-list', (req, res) => {
                     elements.summaryCustomCount.textContent = customPriced;
                 } else {
                     elements.pricingSummary.classList.add('hidden');
-                    elements.generateFlexiblePdfBtn.disabled = true;
-                    elements.generateQRPdfBtn.disabled = true;
                     elements.generateEnhancedPdfBtn.disabled = true;
                     elements.savePriceListBtn.disabled = true;
                 }
             }
 
-            async function generateFlexiblePDF() {
-                try {
-                    const selectedProductsArray = state.calculatedProducts.filter(p => 
-                        state.selectedProducts.has(p.id)
-                    );
-                    
-                    if (selectedProductsArray.length === 0) {
-                        showError('Please select at least one product');
-                        return;
-                    }
-                    
-                    elements.generateFlexiblePdfBtn.disabled = true;
-                    elements.generateFlexiblePdfBtn.textContent = 'Generating...';
-                    
-                    const companyInfo = {
-                        name: document.getElementById('companyName').value || 'Your Company',
-                        email: document.getElementById('companyEmail').value || '',
-                        phone: document.getElementById('companyPhone').value || '',
-                        website: document.getElementById('companyWebsite').value || '',
-                        terms: 'Payment terms are COD. T\\'s & C\\'s Apply.'
-                    };
-                    
-                    const pricingConfig = {
-                        tierName: state.selectedTier,
-                        discountPercent: state.tierDiscounts[state.selectedTier],
-                        notes: ''
-                    };
-                    
-                    const response = await fetch('/api/price-lists/generate-pdf-with-qr', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            title: \`\${state.selectedTier.charAt(0).toUpperCase() + state.selectedTier.slice(1)} Price List\`,
-                            currency: 'ZAR',
-                            products: selectedProductsArray,
-                            company: companyInfo,
-                            pricingConfig,
-                            customPrices: state.customPrices,
-                            clientInfo: {
-                                name: 'Customer',
-                                email: 'customer@example.com'
-                            },
-                            includeQR: true
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = \`\${state.selectedTier}-price-list-\${Date.now()}.pdf\`;
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                        window.URL.revokeObjectURL(url);
-                        
-                        showSuccess('🔥 PDF with QR code generated and downloaded! Customers can scan to order instantly!');
-                    } else {
-                        const error = await response.json();
-                        showError('PDF generation failed: ' + error.message);
-                    }
-                } catch (error) {
-                    showError('Error generating PDF: ' + error.message);
-                } finally {
-                    elements.generateFlexiblePdfBtn.disabled = false;
-                    elements.generateFlexiblePdfBtn.textContent = 'Generate PDF';
-                }
-            }
 
             async function generateQRPDF() {
                 try {
@@ -2535,7 +2457,15 @@ app.get('/create-price-list', (req, res) => {
                     const companyInfo = {
                         name: document.getElementById('companyName').value || 'Your Company',
                         phone: document.getElementById('companyPhone').value || '+27 11 123 4567',
-                        email: document.getElementById('companyEmail').value || 'sales@yourcompany.com'
+                        email: document.getElementById('companyEmail').value || 'sales@yourcompany.com',
+                        website: document.getElementById('companyWebsite').value || 'https://yourcompany.com'
+                    };
+                    
+                    const clientInfo = {
+                        name: document.getElementById('clientCompanyName').value || 'Valued Client',
+                        email: document.getElementById('clientEmail').value || 'client@company.com',
+                        phone: document.getElementById('clientPhone').value || '+27 11 456 7890',
+                        address: document.getElementById('clientAddress').value || 'Client Address'
                     };
                     
                     const response = await fetch('/api/price-lists/generate-enhanced-pdf', {
@@ -2552,7 +2482,10 @@ app.get('/create-price-list', (req, res) => {
                                 address: '123 Business Street, City, Country'
                             },
                             clientConfig: {
-                                name: 'Valued Client',
+                                name: clientInfo.name,
+                                email: clientInfo.email,
+                                phone: clientInfo.phone,
+                                address: clientInfo.address,
                                 category: state.selectedTier,
                                 showClientDetails: true,
                                 showPricingTier: true,

@@ -101,15 +101,20 @@ export class PDFService {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('PREPARED FOR:', pageWidth - 15, 20, { align: 'right' });
+      doc.text('QUOTE FOR:', pageWidth - 15, 20, { align: 'right' });
       
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.text(client.name, pageWidth - 15, 28, { align: 'right' });
       
       doc.setFontSize(8);
-      doc.text(`Category: ${client.category.toUpperCase()}`, pageWidth - 15, 35, { align: 'right' });
-      doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - 15, 40, { align: 'right' });
+      if (client.email) {
+        doc.text(client.email, pageWidth - 15, 35, { align: 'right' });
+      }
+      if (client.phone) {
+        doc.text(client.phone, pageWidth - 15, 40, { align: 'right' });
+      }
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - 15, 45, { align: 'right' });
     }
 
     return 55;
@@ -152,9 +157,8 @@ export class PDFService {
     const pageWidth = doc.internal.pageSize.getWidth();
     let currentY = startY;
 
-    // Table headers
+    // Table headers (no QR column for individual products)
     const headers = ['Product', 'SKU', 'Price'];
-    if (includeQR) headers.push('Order');
 
     // Table styling
     doc.setFillColor(45, 55, 72);
@@ -165,7 +169,7 @@ export class PDFService {
     doc.setFont('helvetica', 'bold');
     
     // Header positions
-    const colPositions = includeQR ? [20, 90, 140, 170] : [20, 90, 140];
+    const colPositions = [20, 90, 140];
     headers.forEach((header, index) => {
       doc.text(header, colPositions[index], currentY + 7);
     });
@@ -199,20 +203,7 @@ export class PDFService {
       
       // Price
       doc.setFont('helvetica', 'bold');
-      doc.text(`$${price.toFixed(2)}`, colPositions[2], currentY + 7);
-      
-      // QR Code if enabled
-      if (includeQR) {
-        try {
-          const qrUrl = `${process.env.APP_URL || 'http://localhost:3000'}/checkout?product=${product.id}&price=${price}`;
-          const qrDataUrl = await QRCode.toDataURL(qrUrl, { width: 100, margin: 1 });
-          doc.addImage(qrDataUrl, 'PNG', colPositions[3], currentY + 1, 10, 10);
-        } catch (error) {
-          console.error('Error generating QR code:', error);
-          doc.setFontSize(6);
-          doc.text('QR Error', colPositions[3], currentY + 7);
-        }
-      }
+      doc.text(`R${price.toFixed(2)}`, colPositions[2], currentY + 7);
 
       currentY += 12;
       
@@ -221,6 +212,41 @@ export class PDFService {
         doc.addPage();
         currentY = 20;
       }
+    }
+
+    // Add single QR code for entire price list if enabled
+    if (includeQR) {
+      currentY += 10;
+      
+      // QR Code section
+      doc.setFillColor(248, 250, 252);
+      doc.rect(15, currentY, pageWidth - 30, 40, 'F');
+      
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(15, currentY, pageWidth - 30, 40, 'S');
+      
+      doc.setTextColor(45, 55, 72);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ORDER THIS QUOTE', 25, currentY + 12);
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Scan QR code to order all items with exact pricing', 25, currentY + 20);
+      
+      try {
+        // Generate QR code for entire price list
+        const productIds = products.map(p => p.id).join(',');
+        const qrUrl = `${process.env.APP_URL || 'http://localhost:3000'}/checkout?priceList=${productIds}`;
+        const qrDataUrl = await QRCode.toDataURL(qrUrl, { width: 200, margin: 1 });
+        doc.addImage(qrDataUrl, 'PNG', pageWidth - 50, currentY + 5, 30, 30);
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+        doc.setFontSize(10);
+        doc.text('QR Code Error', pageWidth - 50, currentY + 20);
+      }
+      
+      currentY += 45;
     }
 
     return currentY;
