@@ -369,3 +369,50 @@ This ensures the currently working price list generator remains functional while
 - Enhanced Shopify data integration
 - Advanced quote management system
 - Multi-tenant branding capabilities
+
+### Shopify Draft Orders Integration Status
+
+**✅ IMPLEMENTED (Latest Update)**
+- Real Shopify Draft Orders API integration in checkout workflow
+- Automatic fallback to mock checkout if Shopify not configured
+- Client information captured and passed to draft orders
+- Comprehensive error handling with graceful degradation
+
+**🔧 REQUIREMENTS FOR LIVE DRAFT ORDERS**
+
+**Environment Variables Required:**
+```
+SHOPIFY_ACCESS_TOKEN=your_private_app_access_token
+SHOPIFY_SHOP_NAME=your-shop-name (without .myshopify.com)
+```
+
+**Shopify App Scopes Required:**
+- `read_products` ✅ (already have)
+- `write_draft_orders` ⚠️ (need to add)
+- `read_orders` (optional - for tracking)
+
+**How to Enable Real Draft Orders:**
+1. Go to your Shopify Admin → Apps → App and sales channel settings
+2. Click "Develop apps" → Select your app
+3. Add `write_draft_orders` scope to your app configuration
+4. Regenerate access token with new scopes
+5. Update `SHOPIFY_ACCESS_TOKEN` environment variable
+6. Restart application
+
+**⚠️ CURRENT LIMITATION:**
+- Without `write_draft_orders` scope, system uses mock checkout URLs
+- Mock URLs work for testing but don't create actual Shopify orders
+- With proper scopes, system creates real draft orders that appear in Shopify admin
+
+**🔄 WORKFLOW STATUS:**
+- ✅ Quote generation working
+- ✅ QR code generation working  
+- ✅ Checkout URL creation working
+- ⚠️ Real draft order creation requires scope update
+- ✅ Fallback system prevents crashes
+
+**🎯 NEXT STEPS TO COMPLETE INTEGRATION:**
+1. Add `write_draft_orders` scope to Shopify app
+2. Test draft order creation in Shopify admin
+3. Verify draft orders appear in Shopify dashboard
+4. Test customer invoice URL workflow

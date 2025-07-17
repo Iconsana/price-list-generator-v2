@@ -1563,7 +1563,7 @@ app.delete('/api/price-lists/:id', async (req, res) => {
 // Create Shopify checkout URL
 app.post('/api/create-checkout', async (req, res) => {
   try {
-    const { items, listId, source } = req.body;
+    const { items, listId, source, clientInfo } = req.body;
     
     console.log('🛒 Creating checkout for list:', listId, 'items:', items?.length);
     
@@ -1574,25 +1574,87 @@ app.post('/api/create-checkout', async (req, res) => {
       });
     }
     
-    // In a real implementation, this would create a Shopify checkout
-    // For now, we'll simulate the process
-    const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // Check if Shopify is properly configured for draft orders
+    const hasShopifyConfig = process.env.SHOPIFY_ACCESS_TOKEN && process.env.SHOPIFY_SHOP_NAME;
     
-    // Create checkout URL (handle domain properly)
-    const shopDomain = process.env.SHOPIFY_SHOP_NAME || 'demo-shop';
-    const cleanDomain = shopDomain.replace('.myshopify.com', ''); // Remove if already present
-    const mockCheckoutUrl = `https://${cleanDomain}.myshopify.com/cart/add?id=mock&return_to=/checkout`;
-    
-    console.log('✅ Checkout URL created, total:', totalAmount);
-    
-    res.json({
-      success: true,
-      checkoutUrl: mockCheckoutUrl,
-      totalAmount: totalAmount,
-      itemCount: items.length,
-      listId: listId,
-      message: 'Checkout URL created successfully'
-    });
+    if (hasShopifyConfig) {
+      try {
+        // Create actual Shopify draft order
+        console.log('📝 Creating Shopify draft order...');
+        
+        const draftOrderManager = new DraftOrderManager({
+          shop: process.env.SHOPIFY_SHOP_NAME,
+          accessToken: process.env.SHOPIFY_ACCESS_TOKEN
+        });
+        
+        // Transform items to match draft order format
+        const priceListData = {
+          listId: listId || `list_${Date.now()}`,
+          products: items.map(item => ({
+            id: item.id,
+            variants: [{
+              id: item.id,
+              price: item.price
+            }],
+            quantity: item.quantity || 1,
+            pricing: {
+              finalPrice: item.price
+            }
+          })),
+          clientName: clientInfo?.name || 'Customer',
+          clientEmail: clientInfo?.email || 'customer@example.com',
+          pricingTier: 'quote'
+        };
+        
+        const draftOrder = await draftOrderManager.createDraftOrder(priceListData);
+        
+        console.log('✅ Shopify draft order created:', draftOrder.id);
+        
+        res.json({
+          success: true,
+          checkoutUrl: draftOrder.invoice_url,
+          totalAmount: parseFloat(draftOrder.total_price),
+          itemCount: draftOrder.line_items.length,
+          listId: listId,
+          draftOrderId: draftOrder.id,
+          message: 'Draft order created successfully in Shopify'
+        });
+        
+      } catch (shopifyError) {
+        console.error('❌ Shopify draft order failed:', shopifyError);
+        
+        // Fall back to mock checkout if Shopify fails
+        const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const shopDomain = process.env.SHOPIFY_SHOP_NAME || 'demo-shop';
+        const cleanDomain = shopDomain.replace('.myshopify.com', '');
+        const mockCheckoutUrl = `https://${cleanDomain}.myshopify.com/cart/add?id=mock&return_to=/checkout`;
+        
+        res.json({
+          success: true,
+          checkoutUrl: mockCheckoutUrl,
+          totalAmount: totalAmount,
+          itemCount: items.length,
+          listId: listId,
+          message: 'Using fallback checkout (Shopify draft order failed)',
+          error: shopifyError.message
+        });
+      }
+    } else {
+      // No Shopify config - use mock checkout
+      console.log('⚠️ No Shopify config, using mock checkout');
+      
+      const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const mockCheckoutUrl = `https://demo-shop.myshopify.com/cart/add?id=mock&return_to=/checkout`;
+      
+      res.json({
+        success: true,
+        checkoutUrl: mockCheckoutUrl,
+        totalAmount: totalAmount,
+        itemCount: items.length,
+        listId: listId,
+        message: 'Mock checkout created (Shopify not configured)'
+      });
+    }
     
   } catch (error) {
     console.error('❌ Error creating checkout:', error);
