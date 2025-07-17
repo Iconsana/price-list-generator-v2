@@ -1578,9 +1578,10 @@ app.post('/api/create-checkout', async (req, res) => {
     // For now, we'll simulate the process
     const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
-    // Simulate creating checkout URL
+    // Create checkout URL (handle domain properly)
     const shopDomain = process.env.SHOPIFY_SHOP_NAME || 'demo-shop';
-    const mockCheckoutUrl = `https://${shopDomain}.myshopify.com/cart/add?id=mock&return_to=/checkout`;
+    const cleanDomain = shopDomain.replace('.myshopify.com', ''); // Remove if already present
+    const mockCheckoutUrl = `https://${cleanDomain}.myshopify.com/cart/add?id=mock&return_to=/checkout`;
     
     console.log('✅ Checkout URL created, total:', totalAmount);
     
