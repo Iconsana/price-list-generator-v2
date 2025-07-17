@@ -17,15 +17,80 @@
     <div id="selected-products" class="mb-8"></div>
     
     <!-- Export Controls -->
-    <button id="exportBtn" class="bg-green-600 px-4 py-2 text-white rounded">
-      📄 Export PDF
-    </button>
+    <div class="flex gap-4 mb-8">
+      <button id="configBtn" class="bg-blue-600 px-4 py-2 text-white rounded">
+        🏢 Company Config
+      </button>
+      <button id="exportBtn" class="bg-green-600 px-4 py-2 text-white rounded">
+        📄 Export PDF
+      </button>
+      <button id="enhancedExportBtn" class="bg-purple-600 px-4 py-2 text-white rounded">
+        ✨ Enhanced PDF
+      </button>
+    </div>
+
+    <!-- Company Configuration Modal -->
+    <div id="companyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+      <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+          <h3 class="text-xl font-bold mb-4">Company Configuration</h3>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Company Name</label>
+              <input type="text" id="companyName" class="w-full border rounded px-3 py-2" 
+                     placeholder="Your Company Name">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-1">Tagline</label>
+              <input type="text" id="companyTagline" class="w-full border rounded px-3 py-2" 
+                     placeholder="Professional • Reliable • Quality">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-1">Email</label>
+              <input type="email" id="companyEmail" class="w-full border rounded px-3 py-2" 
+                     placeholder="sales@yourcompany.com">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-1">Phone</label>
+              <input type="tel" id="companyPhone" class="w-full border rounded px-3 py-2" 
+                     placeholder="+1 234 567-8900">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-1">Website</label>
+              <input type="url" id="companyWebsite" class="w-full border rounded px-3 py-2" 
+                     placeholder="https://yourcompany.com">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium mb-1">Address</label>
+              <input type="text" id="companyAddress" class="w-full border rounded px-3 py-2" 
+                     placeholder="123 Business Street, City, Country">
+            </div>
+          </div>
+          
+          <div class="flex gap-2 mt-6">
+            <button id="saveCompanyConfig" class="bg-green-600 px-4 py-2 text-white rounded">
+              Save Configuration
+            </button>
+            <button id="cancelCompanyConfig" class="bg-gray-600 px-4 py-2 text-white rounded">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
     // ✅ Match your exact vanilla JS pattern
     let selectedProducts = [];
     let allProducts = [];
+    let companyConfig = {};
 
     // Fetch products from Shopify
     async function loadProducts() {
@@ -101,8 +166,108 @@
       }
     });
 
+    // Enhanced PDF Export
+    document.getElementById('enhancedExportBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/price-lists/generate-enhanced-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            products: selectedProducts,
+            companyConfig: companyConfig,
+            clientConfig: {
+              name: "Client Company",
+              category: "wholesale",
+              showClientDetails: true,
+              showPricingTier: true,
+              hideVendorStock: true
+            },
+            pricingTier: 'wholesale',
+            includeQR: true,
+            title: 'Professional Price List'
+          })
+        });
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'enhanced-price-list.pdf';
+          a.click();
+          console.log('✅ Enhanced PDF exported successfully');
+        } else {
+          console.error('Enhanced PDF export failed');
+        }
+      } catch (error) {
+        console.error('Enhanced export error:', error);
+      }
+    });
+
+    // Company Configuration Modal
+    document.getElementById('configBtn').addEventListener('click', () => {
+      loadCompanyConfig();
+      document.getElementById('companyModal').classList.remove('hidden');
+    });
+
+    document.getElementById('cancelCompanyConfig').addEventListener('click', () => {
+      document.getElementById('companyModal').classList.add('hidden');
+    });
+
+    document.getElementById('saveCompanyConfig').addEventListener('click', async () => {
+      const config = {
+        name: document.getElementById('companyName').value,
+        tagline: document.getElementById('companyTagline').value,
+        email: document.getElementById('companyEmail').value,
+        phone: document.getElementById('companyPhone').value,
+        website: document.getElementById('companyWebsite').value,
+        address: document.getElementById('companyAddress').value
+      };
+
+      try {
+        const response = await fetch('/api/company-config/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+
+        if (response.ok) {
+          companyConfig = config;
+          document.getElementById('companyModal').classList.add('hidden');
+          console.log('✅ Company configuration saved');
+        } else {
+          console.error('Failed to save company configuration');
+        }
+      } catch (error) {
+        console.error('Company config save error:', error);
+      }
+    });
+
+    // Load company configuration
+    async function loadCompanyConfig() {
+      try {
+        const response = await fetch('/api/company-config');
+        if (response.ok) {
+          const data = await response.json();
+          const config = data.config;
+          
+          document.getElementById('companyName').value = config.name || '';
+          document.getElementById('companyTagline').value = config.tagline || '';
+          document.getElementById('companyEmail').value = config.email || '';
+          document.getElementById('companyPhone').value = config.phone || '';
+          document.getElementById('companyWebsite').value = config.website || '';
+          document.getElementById('companyAddress').value = config.address || '';
+        }
+      } catch (error) {
+        console.error('Error loading company config:', error);
+      }
+    }
+
     // Initialize
-    window.addEventListener('DOMContentLoaded', loadProducts);
+    window.addEventListener('DOMContentLoaded', () => {
+      loadProducts();
+      loadCompanyConfig();
+    });
   </script>
 </body>
 </html>

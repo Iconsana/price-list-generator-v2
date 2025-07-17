@@ -18,6 +18,12 @@ const PORT = process.env.PORT || 3000;
 import draftOrdersRouter, { DraftOrderManager } from './draft-orders.js';
 import QRCode from 'qrcode';
 
+// Import enhanced services
+import { PDFService } from './services/pdf.js';
+import { PricingService } from './services/pricing.js';
+import { StorageService } from './utils/storage.js';
+import { QRService } from './utils/qr.js';
+
 dotenv.config();
 
 // ===========================================
@@ -289,6 +295,12 @@ class ShopifyService {
 
 // Create Shopify service instance
 const shopifyService = new ShopifyService();
+
+// Create enhanced service instances
+const pdfService = new PDFService();
+const pricingService = new PricingService();
+const storageService = new StorageService();
+const qrService = new QRService();
 
 // ===========================================
 // IN-MEMORY PRICE LIST STORAGE
@@ -1148,6 +1160,95 @@ app.post('/api/price-lists/generate-pdf-flexible', async (req, res) => {
     });
   }
 });
+
+// Enhanced PDF generation endpoint using new service
+app.post('/api/price-lists/generate-enhanced-pdf', async (req, res) => {
+  try {
+    const { 
+      products, 
+      companyConfig = {},
+      clientConfig = {},
+      pricingTier = 'wholesale',
+      customPrices = {},
+      includeQR = true,
+      title = 'Professional Price List'
+    } = req.body;
+    
+    console.log('🎨 Generating professional PDF with enhanced design');
+    
+    // Use the new PDF service
+    const doc = await pdfService.generateEnhancedPDF(products, {
+      companyConfig,
+      clientConfig,
+      pricingTier,
+      customPrices,
+      includeQR
+    });
+    
+    const pdfBuffer = doc.output('arraybuffer');
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${title.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.byteLength);
+    res.end(Buffer.from(pdfBuffer));
+    
+    console.log('✅ Enhanced PDF with professional design generated successfully');
+    
+  } catch (error) {
+    console.error('❌ Enhanced PDF generation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Enhanced PDF generation failed',
+      error: error.message
+    });
+  }
+});
+
+// Company configuration endpoint
+app.post('/api/company-config/save', async (req, res) => {
+  try {
+    const companyConfig = req.body;
+    
+    // In a real app, this would save to database
+    // For now, we'll just validate and return success
+    const requiredFields = ['name', 'email', 'phone'];
+    const missingFields = requiredFields.filter(field => !companyConfig[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields',
+        missingFields
+      });
+    }
+    
+    console.log('💼 Company configuration saved:', companyConfig.name);
+    
+    res.json({
+      success: true,
+      message: 'Company configuration saved successfully',
+      config: companyConfig
+    });
+    
+  } catch (error) {
+    console.error('❌ Company config save error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save company configuration',
+      error: error.message
+    });
+  }
+});
+
+// Get company configuration
+app.get('/api/company-config', (req, res) => {
+  // Return default config - in real app would fetch from database
+  res.json({
+    success: true,
+    config: pdfService.defaultCompanyConfig
+  });
+});
+
 // API endpoint to save pricing configurations
 app.post('/api/pricing-configs/save', async (req, res) => {
   try {
@@ -1856,6 +1957,9 @@ app.get('/create-price-list', (req, res) => {
                             <button id="generateQRPdfBtn" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700" disabled>
                                 🔥 Generate PDF with QR Code
                             </button>
+                            <button id="generateEnhancedPdfBtn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700" disabled>
+                                ✨ Enhanced Professional PDF
+                            </button>
                             <button id="savePriceListBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700" disabled>
                                 💾 Save Price List
                             </button>
@@ -1943,6 +2047,7 @@ app.get('/create-price-list', (req, res) => {
                 loadProductsBtn: document.getElementById('loadProductsBtn'),
                 generateFlexiblePdfBtn: document.getElementById('generateFlexiblePdfBtn'),
                 generateQRPdfBtn: document.getElementById('generateQRPdfBtn'),
+                generateEnhancedPdfBtn: document.getElementById('generateEnhancedPdfBtn'),
                 savePriceListBtn: document.getElementById('savePriceListBtn'),
                 searchProducts: document.getElementById('searchProducts'),
                 searchBtn: document.getElementById('searchBtn'),
@@ -2083,6 +2188,10 @@ app.get('/create-price-list', (req, res) => {
 
             elements.generateQRPdfBtn.addEventListener('click', async () => {
                 await generateQRPDF();
+            });
+
+            elements.generateEnhancedPdfBtn.addEventListener('click', async () => {
+                await generateEnhancedPDF();
             });
 
             elements.savePriceListBtn.addEventListener('click', async () => {
@@ -2250,6 +2359,7 @@ app.get('/create-price-list', (req, res) => {
                     elements.pricingSummary.classList.remove('hidden');
                     elements.generateFlexiblePdfBtn.disabled = false;
                     elements.generateQRPdfBtn.disabled = false;
+                    elements.generateEnhancedPdfBtn.disabled = false;
                     elements.savePriceListBtn.disabled = false;
                     
                     const customPriced = Object.keys(state.customPrices).length;
@@ -2260,6 +2370,7 @@ app.get('/create-price-list', (req, res) => {
                     elements.pricingSummary.classList.add('hidden');
                     elements.generateFlexiblePdfBtn.disabled = true;
                     elements.generateQRPdfBtn.disabled = true;
+                    elements.generateEnhancedPdfBtn.disabled = true;
                     elements.savePriceListBtn.disabled = true;
                 }
             }
@@ -2404,6 +2515,77 @@ app.get('/create-price-list', (req, res) => {
                 } finally {
                     elements.generateQRPdfBtn.disabled = false;
                     elements.generateQRPdfBtn.textContent = '🔥 Generate PDF with QR Code';
+                }
+            }
+
+            async function generateEnhancedPDF() {
+                try {
+                    const selectedProductsArray = state.calculatedProducts.filter(p => 
+                        state.selectedProducts.has(p.id)
+                    );
+                    
+                    if (selectedProductsArray.length === 0) {
+                        showError('Please select at least one product');
+                        return;
+                    }
+                    
+                    elements.generateEnhancedPdfBtn.disabled = true;
+                    elements.generateEnhancedPdfBtn.textContent = 'Generating...';
+                    
+                    const companyInfo = {
+                        name: document.getElementById('companyName').value || 'Your Company',
+                        phone: document.getElementById('companyPhone').value || '+27 11 123 4567',
+                        email: document.getElementById('companyEmail').value || 'sales@yourcompany.com'
+                    };
+                    
+                    const response = await fetch('/api/price-lists/generate-enhanced-pdf', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            products: selectedProductsArray,
+                            companyConfig: {
+                                name: companyInfo.name,
+                                tagline: 'Professional • Reliable • Quality',
+                                email: companyInfo.email,
+                                phone: companyInfo.phone,
+                                website: 'https://yourcompany.com',
+                                address: '123 Business Street, City, Country'
+                            },
+                            clientConfig: {
+                                name: 'Valued Client',
+                                category: state.selectedTier,
+                                showClientDetails: true,
+                                showPricingTier: true,
+                                hideVendorStock: true
+                            },
+                            pricingTier: state.selectedTier,
+                            customPrices: state.customPrices,
+                            includeQR: true,
+                            title: \`\${state.selectedTier.charAt(0).toUpperCase() + state.selectedTier.slice(1)} Professional Price List\`
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = \`enhanced-\${state.selectedTier}-price-list-\${Date.now()}.pdf\`;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        window.URL.revokeObjectURL(url);
+                        
+                        showSuccess('✨ Enhanced Professional PDF generated successfully!');
+                    } else {
+                        const error = await response.json();
+                        showError('Enhanced PDF generation failed: ' + error.message);
+                    }
+                } catch (error) {
+                    showError('Error generating enhanced PDF: ' + error.message);
+                } finally {
+                    elements.generateEnhancedPdfBtn.disabled = false;
+                    elements.generateEnhancedPdfBtn.textContent = '✨ Enhanced Professional PDF';
                 }
             }
 
