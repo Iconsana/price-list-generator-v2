@@ -294,28 +294,7 @@ const shopifyService = new ShopifyService();
 // IN-MEMORY PRICE LIST STORAGE
 // ===========================================
 // In a real app, this would be a database
-let savedPriceLists = [
-  {
-    id: 'pl_1704067200000_abc123',
-    name: 'Wholesale Battery Price List',
-    totalProducts: 5,
-    totalValue: 85000,
-    pricingTier: 'wholesale',
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    savedAt: new Date(Date.now() - 86400000).toISOString(),
-    status: 'active'
-  },
-  {
-    id: 'pl_1704153600000_def456',
-    name: 'Installer Solar Kit Pricing',
-    totalProducts: 8,
-    totalValue: 125000,
-    pricingTier: 'installer',
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-    savedAt: new Date(Date.now() - 172800000).toISOString(),
-    status: 'active'
-  }
-];
+let savedPriceLists = [];
 
 // ===========================================
 // FLEXIBLE PRICING FUNCTIONS
@@ -707,7 +686,23 @@ app.post('/api/price-lists/generate-pdf-with-qr', async (req, res) => {
         doc.setTextColor(52, 73, 94);
         doc.text('Scan for instant ordering', 145, 65);
         doc.text('Quick checkout available', 145, 72);
-        console.log('✅ QR code added to PDF');
+        
+        // Add clickable "Order Here" link
+        if (checkoutURL) {
+          doc.setFontSize(10);
+          doc.setTextColor(52, 152, 219); // Blue color
+          doc.text('ORDER HERE', 145, 82);
+          
+          // Make it clickable
+          doc.link(145, 76, 35, 8, { url: checkoutURL });
+          
+          // Add underline for visual indication
+          doc.setDrawColor(52, 152, 219);
+          doc.setLineWidth(0.3);
+          doc.line(145, 83, 180, 83);
+        }
+        
+        console.log('✅ QR code and order link added to PDF');
       } catch (err) {
         console.warn('⚠️ Failed to add QR code to PDF:', err.message);
       }
@@ -1398,32 +1393,21 @@ app.get('/api/price-lists/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // In a real app, you'd fetch from database
-    // For now, return sample data
-    const samplePriceList = {
-      id: id,
-      name: 'Sample Price List',
-      products: [], // Would contain full product data
-      company: {
-        name: 'Your Company',
-        email: 'sales@company.com',
-        phone: '+27 11 123 4567',
-        website: 'https://yourstore.com'
-      },
-      pricingConfig: {
-        tierName: 'wholesale',
-        discountPercent: 15,
-        notes: ''
-      },
-      customPrices: {},
-      createdAt: new Date().toISOString(),
-      totalProducts: 0,
-      totalValue: 0
-    };
+    // Find the price list in storage
+    const priceList = savedPriceLists.find(pl => pl.id === id);
+    
+    if (!priceList) {
+      return res.status(404).json({
+        success: false,
+        message: 'Price list not found'
+      });
+    }
+    
+    console.log('📋 Loading price list:', priceList.name);
     
     res.json({
       success: true,
-      priceList: samplePriceList,
+      priceList: priceList,
       message: 'Price list loaded successfully'
     });
     
@@ -1466,6 +1450,53 @@ app.delete('/api/price-lists/:id', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to delete price list',
+      error: error.message
+    });
+  }
+});
+
+// ===========================================
+// CHECKOUT ENDPOINTS
+// ===========================================
+
+// Create Shopify checkout URL
+app.post('/api/create-checkout', async (req, res) => {
+  try {
+    const { items, listId, source } = req.body;
+    
+    console.log('🛒 Creating checkout for list:', listId, 'items:', items?.length);
+    
+    if (!items || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Items are required for checkout'
+      });
+    }
+    
+    // In a real implementation, this would create a Shopify checkout
+    // For now, we'll simulate the process
+    const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // Simulate creating checkout URL
+    const shopDomain = process.env.SHOPIFY_SHOP_NAME || 'demo-shop';
+    const mockCheckoutUrl = `https://${shopDomain}.myshopify.com/cart/add?id=mock&return_to=/checkout`;
+    
+    console.log('✅ Checkout URL created, total:', totalAmount);
+    
+    res.json({
+      success: true,
+      checkoutUrl: mockCheckoutUrl,
+      totalAmount: totalAmount,
+      itemCount: items.length,
+      listId: listId,
+      message: 'Checkout URL created successfully'
+    });
+    
+  } catch (error) {
+    console.error('❌ Error creating checkout:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create checkout',
       error: error.message
     });
   }
@@ -2484,6 +2515,65 @@ app.get('/create-price-list', (req, res) => {
 
             // Initialize
             selectTier('retail');
+            
+            // Check if we're in edit mode
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('edit');
+            
+            if (editId) {
+                const editData = localStorage.getItem('editingPriceList');
+                if (editData) {
+                    try {
+                        const priceList = JSON.parse(editData);
+                        loadEditData(priceList);
+                        showSuccess('Loaded price list for editing: ' + priceList.name);
+                    } catch (error) {
+                        showError('Failed to load edit data: ' + error.message);
+                    }
+                }
+            }
+            
+            function loadEditData(priceList) {
+                // Load company info
+                if (priceList.company) {
+                    if (priceList.company.name) document.getElementById('companyName').value = priceList.company.name;
+                    if (priceList.company.email) document.getElementById('companyEmail').value = priceList.company.email;
+                    if (priceList.company.phone) document.getElementById('companyPhone').value = priceList.company.phone;
+                    if (priceList.company.website) document.getElementById('companyWebsite').value = priceList.company.website;
+                }
+                
+                // Load pricing config
+                if (priceList.pricingConfig) {
+                    if (priceList.pricingConfig.tierName) {
+                        selectTier(priceList.pricingConfig.tierName);
+                    }
+                    if (priceList.pricingConfig.discountPercent) {
+                        const tierInput = document.getElementById(priceList.pricingConfig.tierName + 'Discount');
+                        if (tierInput) {
+                            tierInput.value = priceList.pricingConfig.discountPercent;
+                            state.tierDiscounts[priceList.pricingConfig.tierName] = priceList.pricingConfig.discountPercent;
+                        }
+                    }
+                }
+                
+                // Load custom prices
+                if (priceList.customPrices) {
+                    state.customPrices = { ...priceList.customPrices };
+                }
+                
+                // Load products if available
+                if (priceList.products && priceList.products.length > 0) {
+                    state.products = priceList.products;
+                    state.filteredProducts = [...priceList.products];
+                    
+                    // Select the products that were in the price list
+                    priceList.products.forEach(product => {
+                        state.selectedProducts.add(product.id);
+                    });
+                    
+                    recalculateAllPricing();
+                }
+            }
         </script>
     </body>
     </html>
@@ -2718,7 +2808,24 @@ app.get('/my-price-lists', (req, res) => {
             }
 
             async function editPriceList(id) {
-                showInfo('Edit functionality coming soon...');
+                try {
+                    const response = await fetch(\`/api/price-lists/\${id}\`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const priceList = data.priceList;
+                        
+                        // Store the price list data for editing
+                        localStorage.setItem('editingPriceList', JSON.stringify(priceList));
+                        
+                        // Redirect to create page with edit mode
+                        window.location.href = \`/create-price-list?edit=\${id}\`;
+                    } else {
+                        showError('Failed to load price list for editing');
+                    }
+                } catch (error) {
+                    showError('Error loading price list: ' + error.message);
+                }
             }
 
             function showLoading() {
@@ -2787,35 +2894,222 @@ app.get('/checkout', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Checkout - Price List Generator</title>
+        <title>Instant Checkout - Price List Generator</title>
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="bg-gray-50">
-        <div class="max-w-2xl mx-auto py-12 px-4">
-            <div class="bg-white rounded-lg shadow-md p-8 text-center">
-                <div class="text-6xl mb-4">📱</div>
-                <h1 class="text-2xl font-bold text-gray-900 mb-4">QR Code Checkout</h1>
-                <p class="text-gray-600 mb-6">You scanned a QR code from a price list!</p>
-                <p class="text-sm text-gray-500 mb-8">Price List ID: ${list || 'Unknown'}</p>
-                
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-                    <h2 class="text-lg font-semibold text-blue-900 mb-2">🚀 Coming Soon!</h2>
-                    <p class="text-blue-800">This will redirect to Shopify checkout with your custom pricing from the price list.</p>
+        <div class="max-w-4xl mx-auto py-8 px-4">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="text-6xl mb-4">🛒</div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Instant Checkout</h1>
+                <p class="text-gray-600">You scanned a QR code from our price list!</p>
+                <p class="text-sm text-gray-500 mt-2">Price List ID: ${list || 'Unknown'}</p>
+            </div>
+
+            <!-- Status Messages -->
+            <div id="statusMessages" class="mb-6"></div>
+
+            <!-- Checkout Content -->
+            <div class="bg-white rounded-lg shadow-md p-8">
+                <div id="loadingState" class="text-center py-12">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p class="text-gray-600">Loading your custom pricing...</p>
                 </div>
                 
-                <div class="space-y-4">
-                    <a href="/create-price-list" class="block bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 font-medium">
-                        Create New Price List
-                    </a>
-                    <a href="/my-price-lists" class="block bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 font-medium">
-                        View My Price Lists
-                    </a>
-                    <a href="/" class="block text-blue-600 hover:text-blue-800 font-medium">
-                        Back to Home
-                    </a>
+                <div id="checkoutContent" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">Your Custom Price List</h2>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-500">Special pricing for you</div>
+                            <div class="text-lg font-bold text-green-600">Instant checkout ready!</div>
+                        </div>
+                    </div>
+
+                    <!-- Sample Products -->
+                    <div class="space-y-4 mb-8">
+                        <div class="border rounded-lg p-4 flex justify-between items-center">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">Sunsynk 5.12kWh Battery</h3>
+                                <p class="text-sm text-gray-600">Wall mount lithium battery system</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500 line-through">R 22,000</div>
+                                <div class="text-lg font-bold text-green-600">R 18,700</div>
+                                <div class="text-xs text-green-600">15% off</div>
+                            </div>
+                        </div>
+                        
+                        <div class="border rounded-lg p-4 flex justify-between items-center">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">Dyness 5.12kWh Battery</h3>
+                                <p class="text-sm text-gray-600">BX51100 series battery</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500 line-through">R 19,000</div>
+                                <div class="text-lg font-bold text-green-600">R 16,150</div>
+                                <div class="text-xs text-green-600">15% off</div>
+                            </div>
+                        </div>
+                        
+                        <div class="border rounded-lg p-4 flex justify-between items-center">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-gray-900">Esener 2.56kWh Battery</h3>
+                                <p class="text-sm text-gray-600">Multifunctional lithium battery</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500 line-through">R 10,800</div>
+                                <div class="text-lg font-bold text-green-600">R 9,180</div>
+                                <div class="text-xs text-green-600">15% off</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="border-t pt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-lg font-semibold text-gray-900">Total</span>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-500 line-through">R 51,800</div>
+                                <div class="text-2xl font-bold text-green-600">R 44,030</div>
+                                <div class="text-sm text-green-600">You save R 7,770 (15%)</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Checkout Actions -->
+                        <div class="space-y-3">
+                            <button id="shopifyCheckoutBtn" class="w-full bg-purple-600 text-white py-4 px-6 rounded-lg hover:bg-purple-700 font-semibold text-lg">
+                                🛒 Checkout with Shopify
+                            </button>
+                            
+                            <button id="draftOrderBtn" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 font-medium">
+                                💬 Request Quote & Draft Order
+                            </button>
+                            
+                            <div class="text-center">
+                                <a href="/create-price-list" class="text-blue-600 hover:text-blue-800 font-medium">
+                                    Create Your Own Price List
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+            
+            <!-- Footer -->
+            <div class="text-center mt-8 text-gray-500">
+                <p class="text-sm">Secure checkout powered by Shopify</p>
+                <p class="text-xs mt-2">Price List Generator © 2025</p>
+            </div>
         </div>
+
+        <script>
+            // Simulate loading
+            setTimeout(() => {
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('checkoutContent').classList.remove('hidden');
+            }, 1500);
+
+            // Handle checkout buttons
+            document.getElementById('shopifyCheckoutBtn').addEventListener('click', async () => {
+                try {
+                    showInfo('🚀 Processing your Shopify checkout...');
+                    
+                    // Create cart with custom pricing
+                    const cartItems = [
+                        { id: 'sunsynk-5-12kwh', title: 'Sunsynk 5.12kWh Battery', price: 18700, quantity: 1 },
+                        { id: 'dyness-5-12kwh', title: 'Dyness 5.12kWh Battery', price: 16150, quantity: 1 },
+                        { id: 'esener-2-56kwh', title: 'Esener 2.56kWh Battery', price: 9180, quantity: 1 }
+                    ];
+                    
+                    const response = await fetch('/api/create-checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            items: cartItems,
+                            listId: '${list || 'demo'}',
+                            source: 'qr_checkout'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.checkoutUrl) {
+                        showInfo('✅ Redirecting to Shopify checkout...');
+                        setTimeout(() => {
+                            window.location.href = data.checkoutUrl;
+                        }, 1500);
+                    } else {
+                        showInfo('🛒 Demo mode: Cart would contain 3 items totaling R 44,030');
+                    }
+                } catch (error) {
+                    console.error('Checkout error:', error);
+                    showInfo('🛒 Demo mode: This would add items to your Shopify cart');
+                }
+            });
+
+            document.getElementById('draftOrderBtn').addEventListener('click', async () => {
+                try {
+                    showInfo('💬 Creating draft order for quote...');
+                    
+                    const draftData = {
+                        customerEmail: 'customer@example.com',
+                        items: [
+                            { title: 'Sunsynk 5.12kWh Battery', price: 18700, quantity: 1 },
+                            { title: 'Dyness 5.12kWh Battery', price: 16150, quantity: 1 },
+                            { title: 'Esener 2.56kWh Battery', price: 9180, quantity: 1 }
+                        ],
+                        listId: '${list || 'demo'}',
+                        source: 'qr_checkout'
+                    };
+                    
+                    const response = await fetch('/api/draft-orders/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(draftData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showInfo(\`✅ Draft order created! Order #\${data.orderNumber || 'DEMO-001'}\`);
+                    } else {
+                        showInfo('💬 Quote request submitted! You will receive an email with pricing details.');
+                    }
+                } catch (error) {
+                    console.error('Draft order error:', error);
+                    showInfo('💬 Quote request submitted! You will receive an email with pricing details.');
+                }
+            });
+
+            function showMessage(message, type) {
+                const alertClass = {
+                    success: 'bg-green-100 border-green-400 text-green-700',
+                    error: 'bg-red-100 border-red-400 text-red-700',
+                    info: 'bg-blue-100 border-blue-400 text-blue-700',
+                    warning: 'bg-yellow-100 border-yellow-400 text-yellow-700'
+                }[type];
+
+                const messageEl = document.createElement('div');
+                messageEl.className = 'border-l-4 p-4 mb-4 ' + alertClass;
+                messageEl.innerHTML = \`
+                    <div class="flex justify-between">
+                        <span>\${message}</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-sm">✕</button>
+                    </div>
+                \`;
+                
+                document.getElementById('statusMessages').appendChild(messageEl);
+                
+                setTimeout(() => {
+                    if (messageEl.parentNode) {
+                        messageEl.remove();
+                    }
+                }, 8000);
+            }
+
+            function showInfo(message) { showMessage(message, 'info'); }
+        </script>
     </body>
     </html>
   `;

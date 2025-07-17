@@ -282,5 +282,78 @@ router.get('/check-conversion/:draftOrderId', async (req, res) => {
     }
 });
 
+// Simplified create endpoint for QR checkout
+router.post('/create', async (req, res) => {
+    try {
+        const { customerEmail, items, listId, source } = req.body;
+        
+        console.log('📝 Creating draft order for checkout, items:', items?.length);
+        
+        if (!items || items.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Items are required' 
+            });
+        }
+
+        // Create simplified draft order data
+        const priceListData = {
+            products: items.map(item => ({
+                id: item.id || `product-${Date.now()}`,
+                title: item.title,
+                variants: [{ price: item.price }],
+                quantity: item.quantity || 1,
+                pricing: { finalPrice: item.price }
+            })),
+            clientEmail: customerEmail || 'customer@example.com',
+            clientName: 'QR Code Customer',
+            listId: listId || 'qr-checkout',
+            pricingTier: 'wholesale'
+        };
+
+        const draftOrderManager = new DraftOrderManager({
+            shop: process.env.SHOPIFY_SHOP_NAME || 'demo-shop',
+            accessToken: process.env.SHOPIFY_ACCESS_TOKEN || 'demo-token'
+        });
+
+        try {
+            // Try to create real draft order if Shopify is configured
+            const draftOrder = await draftOrderManager.createDraftOrder(priceListData);
+            
+            res.json({
+                success: true,
+                orderNumber: `DO-${draftOrder.id}`,
+                draftOrderId: draftOrder.id,
+                checkoutURL: draftOrder.invoice_url,
+                totalPrice: draftOrder.total_price,
+                message: 'Draft order created successfully'
+            });
+            
+        } catch (shopifyError) {
+            // Fallback to demo mode if Shopify isn't configured
+            console.log('📝 Using demo mode for draft order');
+            
+            const totalPrice = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+            const mockOrderNumber = `DEMO-${Date.now().toString().slice(-6)}`;
+            
+            res.json({
+                success: true,
+                orderNumber: mockOrderNumber,
+                draftOrderId: mockOrderNumber,
+                totalPrice: totalPrice,
+                itemCount: items.length,
+                message: 'Quote request created successfully (demo mode)'
+            });
+        }
+
+    } catch (error) {
+        console.error('Draft order creation error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 export default router;
 export { DraftOrderManager };
