@@ -214,16 +214,16 @@ export class PDFService {
       }
     }
 
-    // Add action buttons section if enabled
+    // Add action buttons and QR code section if enabled
     if (includeQR) {
       currentY += 10;
       
-      // Action buttons section
+      // Action section with both buttons and QR code
       doc.setFillColor(248, 250, 252);
-      doc.rect(15, currentY, pageWidth - 30, 55, 'F');
+      doc.rect(15, currentY, pageWidth - 30, 65, 'F');
       
       doc.setDrawColor(226, 232, 240);
-      doc.rect(15, currentY, pageWidth - 30, 55, 'S');
+      doc.rect(15, currentY, pageWidth - 30, 65, 'S');
       
       doc.setTextColor(45, 55, 72);
       doc.setFontSize(14);
@@ -232,42 +232,47 @@ export class PDFService {
       
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text('Choose your preferred action:', 25, currentY + 25);
+      doc.text('Choose your preferred method:', 25, currentY + 25);
       
       // Order button styling
       doc.setFillColor(59, 130, 246); // Blue
       doc.rect(25, currentY + 30, 70, 12, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.text('Turn Price List into Order', 28, currentY + 38);
       
       // Quote button styling
       doc.setFillColor(34, 197, 94); // Green
-      doc.rect(105, currentY + 30, 70, 12, 'F');
+      doc.rect(25, currentY + 45, 70, 12, 'F');
       doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Turn Price List into Quote', 28, currentY + 53);
+      
+      // QR code section (right side)
+      doc.setTextColor(45, 55, 72);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text('Turn Price List into Quote', 108, currentY + 38);
+      doc.text('OR SCAN QR CODE', pageWidth - 60, currentY + 15);
       
-      // Add QR code for order functionality
       try {
         const productIds = products.map(p => p.id).join(',');
         const qrUrl = `${process.env.APP_URL || 'http://localhost:3000'}/checkout?priceList=${productIds}`;
-        const qrDataUrl = await QRCode.toDataURL(qrUrl, { width: 150, margin: 1 });
-        doc.addImage(qrDataUrl, 'PNG', pageWidth - 45, currentY + 10, 25, 25);
+        const qrDataUrl = await QRCode.toDataURL(qrUrl, { width: 200, margin: 1 });
+        doc.addImage(qrDataUrl, 'PNG', pageWidth - 55, currentY + 20, 35, 35);
         
         doc.setTextColor(100, 116, 139);
-        doc.setFontSize(7);
+        doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.text('Scan for Order', pageWidth - 42, currentY + 42);
+        doc.text('Scan to Order', pageWidth - 50, currentY + 60);
       } catch (error) {
         console.error('Error generating QR code:', error);
         doc.setFontSize(8);
-        doc.text('QR Error', pageWidth - 40, currentY + 25);
+        doc.text('QR Code Error', pageWidth - 50, currentY + 35);
       }
       
-      currentY += 60;
+      currentY += 70;
     }
 
     return currentY;
