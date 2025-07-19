@@ -3064,8 +3064,16 @@ app.get('/templates', (req, res) => {
 
 // Checkout page for QR code scans
 app.get('/checkout', async (req, res) => {
-  const { priceList, list } = req.query;
+  const { priceList, list, action, name, email, phone, address } = req.query;
   let actualProducts = [];
+  
+  // Extract client information from URL parameters
+  const clientInfo = {
+    name: name || 'Customer',
+    email: email || 'customer@example.com',
+    phone: phone || '',
+    address: address || ''
+  };
   
   // Try to get real product data
   if (priceList) {
@@ -3075,9 +3083,9 @@ app.get('/checkout', async (req, res) => {
       
       // Get products from Shopify if available
       const shopifyService = new ShopifyService();
-      const shopifyProducts = await shopifyService.getProducts();
+      const shopifyResult = await shopifyService.getProducts();
       
-      actualProducts = shopifyProducts.filter(product => 
+      actualProducts = shopifyResult.products.filter(product => 
         productIds.includes(product.id)
       ).map(product => ({
         id: product.id,
@@ -3158,10 +3166,20 @@ app.get('/checkout', async (req, res) => {
                 </div>
                 
                 <div id="checkoutContent" class="hidden">
+                    <!-- Client Information -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">Order for: ${clientInfo.name}</h3>
+                        <div class="text-sm text-blue-700">
+                            <p>📧 ${clientInfo.email}</p>
+                            ${clientInfo.phone ? `<p>📞 ${clientInfo.phone}</p>` : ''}
+                            ${clientInfo.address ? `<p>📍 ${clientInfo.address}</p>` : ''}
+                        </div>
+                    </div>
+
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-semibold text-gray-900">Your Custom Price List</h2>
                         <div class="text-right">
-                            <div class="text-sm text-gray-500">Special pricing for you</div>
+                            <div class="text-sm text-gray-500">Special pricing for ${clientInfo.name}</div>
                             <div class="text-lg font-bold text-green-600">Instant checkout ready!</div>
                         </div>
                     </div>
@@ -3242,7 +3260,13 @@ app.get('/checkout', async (req, res) => {
                         body: JSON.stringify({ 
                             items: cartItems,
                             listId: '${list || 'demo'}',
-                            source: 'qr_checkout'
+                            source: 'qr_checkout',
+                            clientInfo: {
+                                name: '${clientInfo.name}',
+                                email: '${clientInfo.email}',
+                                phone: '${clientInfo.phone}',
+                                address: '${clientInfo.address}'
+                            }
                         })
                     });
                     
@@ -3267,7 +3291,10 @@ app.get('/checkout', async (req, res) => {
                     showInfo('💬 Creating draft order for quote...');
                     
                     const draftData = {
-                        customerEmail: 'customer@example.com',
+                        customerEmail: '${clientInfo.email}',
+                        customerName: '${clientInfo.name}',
+                        customerPhone: '${clientInfo.phone}',
+                        customerAddress: '${clientInfo.address}',
                         items: ${JSON.stringify(actualProducts)},
                         listId: '${priceList || list || 'demo'}',
                         source: 'qr_checkout'

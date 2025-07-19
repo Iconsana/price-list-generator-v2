@@ -236,7 +236,13 @@ export class PDFService {
       
       // Order button styling with clickable link
       const productIds = products.map(p => p.id).join(',');
-      const orderUrl = `${process.env.APP_URL || 'http://localhost:3000'}/checkout?priceList=${productIds}&action=order`;
+      const clientParams = new URLSearchParams({
+        name: client.name || 'Customer',
+        email: client.email || 'customer@example.com',
+        phone: client.phone || '',
+        address: client.address || ''
+      }).toString();
+      const orderUrl = `${process.env.APP_URL || 'http://localhost:3000'}/checkout?priceList=${productIds}&action=order&${clientParams}`;
       
       doc.setFillColor(59, 130, 246); // Blue
       doc.rect(25, currentY + 30, 70, 12, 'F');
@@ -249,7 +255,7 @@ export class PDFService {
       doc.text('Turn Price List into Order', 28, currentY + 38);
       
       // Quote button styling with clickable link
-      const quoteUrl = `${process.env.APP_URL || 'http://localhost:3000'}/checkout?priceList=${productIds}&action=quote`;
+      const quoteUrl = `${process.env.APP_URL || 'http://localhost:3000'}/checkout?priceList=${productIds}&action=quote&${clientParams}`;
       
       doc.setFillColor(34, 197, 94); // Green
       doc.rect(25, currentY + 45, 70, 12, 'F');

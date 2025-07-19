@@ -33,8 +33,17 @@ class DraftOrderManager {
                 customer: {
                     email: priceListData.clientEmail,
                     first_name: priceListData.clientName?.split(' ')[0] || '',
-                    last_name: priceListData.clientName?.split(' ').slice(1).join(' ') || ''
+                    last_name: priceListData.clientName?.split(' ').slice(1).join(' ') || '',
+                    phone: priceListData.clientPhone || null
                 },
+                
+                // Add billing address if available
+                billing_address: priceListData.clientAddress ? {
+                    address1: priceListData.clientAddress,
+                    first_name: priceListData.clientName?.split(' ')[0] || '',
+                    last_name: priceListData.clientName?.split(' ').slice(1).join(' ') || '',
+                    phone: priceListData.clientPhone || null
+                } : undefined,
                 
                 note: `Price List Generated: ${priceListData.listId || 'Unknown'}
 Client: ${priceListData.clientName}
@@ -287,7 +296,7 @@ router.get('/check-conversion/:draftOrderId', async (req, res) => {
 // Simplified create endpoint for QR checkout
 router.post('/create', async (req, res) => {
     try {
-        const { customerEmail, items, listId, source } = req.body;
+        const { customerEmail, customerName, customerPhone, customerAddress, items, listId, source } = req.body;
         
         console.log('📝 Creating draft order for checkout, items:', items?.length);
         
@@ -308,7 +317,9 @@ router.post('/create', async (req, res) => {
                 pricing: { finalPrice: item.price }
             })),
             clientEmail: customerEmail || 'customer@example.com',
-            clientName: 'QR Code Customer',
+            clientName: customerName || 'QR Code Customer',
+            clientPhone: customerPhone || '',
+            clientAddress: customerAddress || '',
             listId: listId || 'qr-checkout',
             pricingTier: 'wholesale'
         };
