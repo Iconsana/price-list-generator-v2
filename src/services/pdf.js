@@ -60,6 +60,7 @@ export class PDFService {
       customPrices,
       hideVendorStock: client.hideVendorStock,
       includeQR,
+      client,
       startY: currentY
     });
 
@@ -151,6 +152,7 @@ export class PDFService {
       customPrices,
       hideVendorStock,
       includeQR,
+      client,
       startY
     } = options;
 
